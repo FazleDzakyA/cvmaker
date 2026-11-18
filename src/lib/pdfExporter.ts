@@ -8,20 +8,21 @@ export async function downloadCVPdf(elementId: string, filename: string): Promis
   }
 
   try {
-    const html2canvas = (await import('html2canvas')).default;
+    const { toPng } = await import('html-to-image');
     const { jsPDF } = await import('jspdf');
 
-    // High quality canvas render
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
+    // Render using native browser SVG foreignObject (supports modern Tailwind v4 oklab/lab colors seamlessly!)
+    const imgData = await toPng(element, {
+      quality: 0.98,
+      pixelRatio: 2,
       backgroundColor: '#ffffff',
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const img = new Image();
+    img.src = imgData;
+    await new Promise((resolve) => {
+      img.onload = resolve;
+    });
 
     // Standard A4 dimensions in mm: 210 x 297
     const pdf = new jsPDF({
@@ -32,18 +33,18 @@ export async function downloadCVPdf(elementId: string, filename: string): Promis
 
     const pdfWidth = 210;
     const pageHeight = 297;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    const imgHeight = (img.height * pdfWidth) / img.width;
 
     let heightLeft = imgHeight;
     let position = 0;
 
-    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
     heightLeft -= pageHeight;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pageHeight;
     }
 
@@ -51,8 +52,8 @@ export async function downloadCVPdf(elementId: string, filename: string): Promis
     pdf.save(`${cleanFilename}.pdf`);
     return true;
   } catch (error) {
-    console.error('PDF export error:', error);
-    // Fallback to window.print() if canvas fails
+    console.warn('html-to-image export encountered error, triggering vector print dialog:', error);
+    // Fallback to window.print()
     window.print();
     return false;
   }

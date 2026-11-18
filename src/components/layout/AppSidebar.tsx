@@ -12,6 +12,9 @@ import {
   Plus,
   LogOut,
   Sparkles,
+  Wand2,
+  FileText,
+  Bot,
 } from 'lucide-react';
 import { CVData } from '@/types/cv';
 import { saveActiveCV } from '@/lib/storage';
@@ -40,9 +43,11 @@ export const AppSidebar: React.FC = () => {
   const navItems = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'Studio CV', icon: Folder, href: '/builder' },
-    { label: 'Student Mode', icon: GraduationCap, href: '/student-mode' },
+    { label: 'AI Prompt Builder', icon: Wand2, href: '/prompt-builder' },
+    { label: 'Quick Builder (10 Langkah)', icon: FileText, href: '/quick-builder' },
+    { label: 'Guided AI Consultant', icon: Bot, href: '/guided-builder' },
+    { label: 'Templates CV', icon: Star, href: '/templates' },
     { label: 'ATS Checker', icon: ShieldCheck, href: '/ats-checker' },
-    { label: 'Templates', icon: Star, href: '/templates' },
   ];
 
   return (
@@ -50,11 +55,11 @@ export const AppSidebar: React.FC = () => {
       {/* 1. Desktop Floating Glass Sidebar (Left) */}
       <aside className="hidden md:flex flex-col items-center justify-between py-6 px-3 glass-sidebar w-16 shrink-0 h-[calc(100vh-2.5rem)] sticky top-5 z-40 shadow-xl rounded-3xl">
         {/* Top App Icons */}
-        <div className="flex flex-col items-center gap-3.5 w-full">
+        <div className="flex flex-col items-center gap-3 w-full">
           {/* Brand Sparkle Logo */}
           <Link
             href="/dashboard"
-            className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 mb-2 hover:scale-105 transition-transform"
+            className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 mb-1 hover:scale-105 transition-transform"
             title="CVGenie"
           >
             <Sparkles className="w-5 h-5 text-white" />
@@ -75,7 +80,7 @@ export const AppSidebar: React.FC = () => {
                 }`}
                 title={item.label}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 {/* Tooltip on hover */}
                 <span className="absolute left-14 px-2.5 py-1 rounded-xl bg-[#172B49] text-white text-[11px] font-semibold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50">
                   {item.label}
@@ -86,7 +91,7 @@ export const AppSidebar: React.FC = () => {
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex flex-col items-center gap-3 w-full">
+        <div className="flex flex-col items-center gap-2.5 w-full">
           {/* Add New Blank CV */}
           <button
             onClick={handleCreateNewCV}
@@ -127,14 +132,14 @@ export const AppSidebar: React.FC = () => {
         </Link>
 
         <Link
-          href="/builder"
+          href="/quick-builder"
           className={`flex flex-col items-center gap-1 ${
-            pathname === '/builder' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
+            pathname === '/quick-builder' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
           }`}
-          title="Studio CV"
+          title="Quick Builder"
         >
-          <Folder className="w-4 h-4" />
-          <span className="text-[9px]">Studio</span>
+          <FileText className="w-4 h-4" />
+          <span className="text-[9px]">Quick</span>
         </Link>
 
         {/* Center Round Add Button */}
@@ -147,35 +152,26 @@ export const AppSidebar: React.FC = () => {
         </button>
 
         <Link
-          href="/student-mode"
+          href="/guided-builder"
           className={`flex flex-col items-center gap-1 ${
-            pathname === '/student-mode' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
+            pathname === '/guided-builder' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
           }`}
-          title="Student Mode"
+          title="Guided AI"
         >
-          <GraduationCap className="w-4 h-4" />
-          <span className="text-[9px]">Student</span>
+          <Bot className="w-4 h-4" />
+          <span className="text-[9px]">Guided</span>
         </Link>
 
         <Link
-          href="/ats-checker"
+          href="/templates"
           className={`flex flex-col items-center gap-1 ${
-            pathname === '/ats-checker' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
+            pathname === '/templates' ? 'text-[#172B49] font-bold' : 'text-[#496A96]'
           }`}
-          title="ATS Checker"
+          title="Templates"
         >
-          <ShieldCheck className="w-4 h-4" />
-          <span className="text-[9px]">ATS</span>
+          <Star className="w-4 h-4" />
+          <span className="text-[9px]">Desain</span>
         </Link>
-
-        <button
-          onClick={handleSignOut}
-          className="flex flex-col items-center gap-1 text-[#718096] hover:text-red-600"
-          title="Keluar"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="text-[9px]">Keluar</span>
-        </button>
       </nav>
     </>
   );

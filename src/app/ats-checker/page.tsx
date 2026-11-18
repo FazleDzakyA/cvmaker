@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ExternalLink,
   Plus,
+  Wand2,
 } from 'lucide-react';
 import { getActiveCV, saveActiveCV, getStoredCVs } from '@/lib/storage';
 import { analyzeCVWithATS } from '@/lib/atsScorer';
@@ -33,6 +34,14 @@ export default function ATSCheckerPage() {
   const [selectedCV, setSelectedCV] = useState<CVData | null>(null);
   const [report, setReport] = useState<ATSAnalysisReport | null>(null);
   const [isLoadingCVs, setIsLoadingCVs] = useState<boolean>(true);
+  const [jobDescInput, setJobDescInput] = useState<string>('');
+  const [isAnalyzingJD, setIsAnalyzingJD] = useState<boolean>(false);
+  const [jdMatchResult, setJdMatchResult] = useState<{
+    matchScore: number;
+    matchedKeywords: string[];
+    missingKeywords: string[];
+    recommendations: string[];
+  } | null>(null);
 
   // Load available CVs from DB and local storage
   useEffect(() => {
@@ -103,6 +112,34 @@ export default function ATSCheckerPage() {
     setSelectedCV(cv);
     const updatedReport = analyzeCVWithATS(cv);
     setReport(updatedReport);
+    setJdMatchResult(null);
+  };
+
+  // Analyze match against job description
+  const handleAnalyzeJobMatch = async () => {
+    if (!jobDescInput.trim() || !selectedCV) return;
+    setIsAnalyzingJD(true);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ats_job_match',
+          payload: {
+            cvData: selectedCV,
+            jobDescription: jobDescInput,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.data) {
+        setJdMatchResult(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAnalyzingJD(false);
+    }
   };
 
   // Open the selected CV in studio
@@ -380,6 +417,117 @@ export default function ATSCheckerPage() {
                 )}
               </ul>
             </div>
+          </div>
+
+          {/* 4. JOB DESCRIPTION MATCHER (AI RELEVANCE EVALUATION) */}
+          <div className="rounded-3xl glass-card border border-white/90 p-6 sm:p-7 bg-white/85 shadow-lg mb-8 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                  <Wand2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-[#172B49]">
+                    Cocokkan dengan Deskripsi Lowongan (Job Description Matcher)
+                  </h3>
+                  <p className="text-[11px] text-[#718096]">
+                    Tempel teks lowongan kerja untuk mengukur kecocokan kata kunci resume Anda.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                AI Heuristic
+              </span>
+            </div>
+
+            <textarea
+              rows={3}
+              value={jobDescInput}
+              onChange={(e) => setJobDescInput(e.target.value)}
+              placeholder="Tempel syarat, kualifikasi, atau deskripsi pekerjaan dari LinkedIn, JobStreet, atau situs karir di sini..."
+              className="w-full text-xs p-3.5 rounded-2xl border border-slate-200 bg-white text-[#172B49] focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none leading-relaxed"
+            />
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <p className="text-[10px] text-slate-500 leading-tight">
+                *Skor ini dihitung secara internal sebagai panduan optimasi kata kunci, bukan jaminan mutlak kelulusan sistem ATS pihak ketiga.
+              </p>
+              <button
+                type="button"
+                onClick={handleAnalyzeJobMatch}
+                disabled={isAnalyzingJD || !jobDescInput.trim()}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-all hover:scale-105 disabled:opacity-50 shrink-0"
+              >
+                {isAnalyzingJD ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Menganalisis Kecocokan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Analisis Kecocokan Lowongan</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Match Results Display */}
+            {jdMatchResult && (
+              <div className="mt-4 p-5 rounded-2xl bg-gradient-to-br from-purple-50/80 via-blue-50/50 to-white border border-purple-200 space-y-3.5 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-purple-900">
+                    <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                    <span>Hasil Evaluasi Kesesuaian Lowongan:</span>
+                  </div>
+                  <span className="text-sm font-extrabold text-purple-800 bg-white px-3 py-1 rounded-xl shadow-sm border border-purple-100">
+                    Kecocokan: {jdMatchResult.matchScore}%
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-white/80 border border-emerald-200">
+                    <span className="text-[11px] font-bold text-emerald-800 block mb-1">
+                      ✓ Kata Kunci yang Sudah Cocok:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {jdMatchResult.matchedKeywords.map((kw, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white/80 border border-amber-200">
+                    <span className="text-[11px] font-bold text-amber-800 block mb-1">
+                      ⚠ Kata Kunci yang Perlu Ditambahkan:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {jdMatchResult.missingKeywords.map((kw, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {jdMatchResult.recommendations && jdMatchResult.recommendations.length > 0 && (
+                  <div className="pt-2 border-t border-purple-100 text-xs text-purple-900 space-y-1">
+                    <span className="font-bold text-[11px] block">Rekomendasi Tindakan:</span>
+                    <ul className="space-y-1">
+                      {jdMatchResult.recommendations.map((rec, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-purple-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1 shrink-0" />
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>

@@ -35,8 +35,8 @@ export default function TemplatesPage() {
       ? TEMPLATES_CATALOG
       : TEMPLATES_CATALOG.filter((t) => t.category.toLowerCase().includes(selectedCategory.toLowerCase()));
 
-  // Triggered when user selects one of the 3 modes for the selected template
-  const handleSelectCreationMethod = (mode: 'blank' | 'ai' | 'student') => {
+  // Triggered when user selects one of the 4 methods for the selected template
+  const handleSelectCreationMethod = (mode: 'blank' | 'quick' | 'guided' | 'prompt') => {
     if (!methodModalTemplate) return;
     const tplId = methodModalTemplate.id;
 
@@ -49,16 +49,21 @@ export default function TemplatesPage() {
       };
       saveActiveCV(fresh);
       router.push('/builder');
-    } else if (mode === 'ai') {
-      // 2. AI Custom CV: Buka kuesioner form di studio untuk susun prompt & salin / generate
+    } else if (mode === 'quick') {
+      // 2. Quick CV Builder (10 Langkah)
       const current = getActiveCV();
       saveActiveCV({ ...current, templateId: tplId });
-      router.push('/builder?openAI=true');
-    } else if (mode === 'student') {
-      // 3. Student Mode: Panduan bertahap khusus siswa SMK/pelajar
+      router.push('/quick-builder');
+    } else if (mode === 'guided') {
+      // 3. Guided CV Builder (Konsultan AI Interaktif)
       const current = getActiveCV();
       saveActiveCV({ ...current, templateId: tplId });
-      router.push('/student-mode');
+      router.push('/guided-builder');
+    } else if (mode === 'prompt') {
+      // 4. AI Prompt Builder (14-Poin Prompt & Salin)
+      const current = getActiveCV();
+      saveActiveCV({ ...current, templateId: tplId });
+      router.push('/prompt-builder');
     }
   };
 
@@ -257,20 +262,89 @@ export default function TemplatesPage() {
                 </button>
               </div>
 
-              {/* 3 Interactive Cards */}
-              <div className="space-y-3.5 mb-2">
-                {/* Opsi 1: Lembar Kosong (Manual Isi) */}
+              {/* 4 Interactive Creation Method Cards */}
+              <div className="space-y-3 mb-2 max-h-[60vh] overflow-y-auto pr-1">
+                {/* Opsi 1: Quick CV Builder (10 Langkah) */}
                 <div
-                  onClick={() => handleSelectCreationMethod('blank')}
-                  className="p-4 sm:p-5 rounded-2xl glass-card border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group"
+                  onClick={() => handleSelectCreationMethod('quick')}
+                  className="p-4 rounded-2xl glass-card border border-blue-200 hover:border-blue-600 hover:bg-blue-50/50 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group bg-blue-50/20"
                 >
-                  <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 group-hover:bg-[#172B49] group-hover:text-white flex items-center justify-center shrink-0 transition-colors shadow-sm">
-                    <FileText className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h4 className="text-sm font-bold text-[#172B49] group-hover:text-blue-600 transition-colors">
-                        1. Mulai Lembar Kosong (Manual Isi)
+                        1. Quick CV Builder (10 Langkah Cepat)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        Rekomendasi Cepat
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#718096] leading-relaxed">
+                      Isi formulir bertahap 10 langkah (Tujuan $\rightarrow$ Pengalaman $\rightarrow$ Pendidikan $\rightarrow$ Proyek $\rightarrow$ Keahlian). AI memoles tata bahasa dan menyusunnya otomatis ke Studio.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Opsi 2: Guided CV Builder (Konsultan AI) */}
+                <div
+                  onClick={() => handleSelectCreationMethod('guided')}
+                  className="p-4 rounded-2xl glass-card border border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50/50 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group bg-emerald-50/20"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-bold text-[#172B49] group-hover:text-emerald-700 transition-colors">
+                        2. Guided CV Builder (Konsultan AI Interaktif)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Khusus Pemula / Siswa
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#718096] leading-relaxed">
+                      Obrolan santai satu per satu dengan AI Konsultan. Mengubah cerita praktikum sekolah menjadi poin resume profesional tanpa mengarang fakta.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Opsi 3: AI Prompt Builder (14-Poin Prompt & Salin) */}
+                <div
+                  onClick={() => handleSelectCreationMethod('prompt')}
+                  className="p-4 rounded-2xl glass-card border border-purple-200 hover:border-purple-600 hover:bg-purple-50/50 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group bg-purple-50/20"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20">
+                    <Wand2 className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-bold text-[#172B49] group-hover:text-purple-700 transition-colors">
+                        3. AI Prompt Builder (Formulasi 14-Poin Prompt)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                        Bisa Salin ke AI Lain
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#718096] leading-relaxed">
+                      Rancang prompt CV profesional lengkap. Salin untuk ChatGPT / Claude / DeepSeek, atau eksekusi langsung ke Studio CV.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Opsi 4: Lembar Kosong (Manual Isi) */}
+                <div
+                  onClick={() => handleSelectCreationMethod('blank')}
+                  className="p-4 rounded-2xl glass-card border border-slate-200 hover:border-slate-500 hover:bg-slate-50/40 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 group-hover:bg-[#172B49] group-hover:text-white flex items-center justify-center shrink-0 transition-colors shadow-sm">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-bold text-[#172B49] group-hover:text-slate-900 transition-colors">
+                        4. Mulai Lembar Kosong (Manual Isi)
                       </h4>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                         Kontrol Penuh
@@ -278,52 +352,6 @@ export default function TemplatesPage() {
                     </div>
                     <p className="text-xs text-[#718096] leading-relaxed">
                       Mulai dari kanvas kosong bersih dengan tata letak template ini. Anda mengisi seluruh informasi kontak, pendidikan, dan pengalaman secara mandiri.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Opsi 2: AI Custom CV (Kuesioner & Salin Prompt) */}
-                <div
-                  onClick={() => handleSelectCreationMethod('ai')}
-                  className="p-4 sm:p-5 rounded-2xl glass-card border border-blue-200 hover:border-blue-600 hover:bg-blue-50/50 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group bg-blue-50/20"
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-                    <Wand2 className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-bold text-[#172B49] group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
-                        <span>2. AI Custom CV (Form & Salin Prompt)</span>
-                      </h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                        Bisa Salin ke AI Lain
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#718096] leading-relaxed">
-                      Isi kuesioner singkat jurusan/keahlian. Dapatkan <strong>prompt profesional siap salin</strong> untuk digunakan di ChatGPT/Claude, atau generate langsung ke CV Anda.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Opsi 3: Student Mode (Bimbingan Siswa & Lengkapi Sendiri) */}
-                <div
-                  onClick={() => handleSelectCreationMethod('student')}
-                  className="p-4 sm:p-5 rounded-2xl glass-card border border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50/50 cursor-pointer transition-all hover:scale-[1.01] shadow-sm flex items-start gap-4 group bg-emerald-50/20"
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
-                    <GraduationCap className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-bold text-[#172B49] group-hover:text-emerald-700 transition-colors">
-                        3. Student Mode (Siswa SMK / Pelajar)
-                      </h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        Khusus Pelajar
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#718096] leading-relaxed">
-                      Ikuti alur pengisian form terpandu untuk mengubah tugas praktikum kejuruan dan organisasi sekolah menjadi poin CV bernilai tinggi, lalu lengkapi sisanya di Studio.
                     </p>
                   </div>
                 </div>

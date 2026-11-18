@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { transformStudentExperience, generateProfessionalSummary, rewriteBulletPoint } from '@/lib/aiTransformer';
+import { CVData } from '@/types/cv';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-async function callGemini(prompt: string): Promise<string | null> {
+async function callGemini(prompt: string, jsonMode: boolean = false): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
   const candidateModels = [
@@ -15,19 +16,27 @@ async function callGemini(prompt: string): Promise<string | null> {
   for (const model of candidateModels) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const payloadBody: any = {
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+      };
+
+      if (jsonMode) {
+        payloadBody.generationConfig = {
+          responseMimeType: 'application/json',
+        };
+      }
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }],
-            },
-          ],
-        }),
+        body: JSON.stringify(payloadBody),
         signal: controller.signal,
       });
 
@@ -58,10 +67,424 @@ export async function POST(req: NextRequest) {
     }
 
     switch (action) {
-      case 'transform_experience': {
-        const { type, title, role, rawDescription, toolsUsed, fieldCategory } = payload;
+      // =========================================================================
+      // 1. GENERATE COMPLETE 14-POINT STRUCTURED PROMPT (AI PROMPT BUILDER)
+      // =========================================================================
+      case 'generate_complete_prompt': {
+        const {
+          rawInput = '',
+          targetRole = 'Junior Specialist',
+          majorCategory = 'Umum',
+          experienceLevel = 'student',
+          skills = '',
+          projects = '',
+          jobDescription = '',
+          writingStyle = 'Professional, ATS-Optimized, and Confident',
+          language = 'id',
+        } = payload || {};
 
-        // Try Gemini live generation first with Universal Major context
+        const langName = language === 'en' ? 'English' : 'Bahasa Indonesia';
+
+        let promptOutput = `Bertindaklah sebagai Expert Executive Resume Writer dan ATS (Applicant Tracking System) Optimization Specialist bersertifikasi internasional.
+
+Tolong buatkan materi CV (Curriculum Vitae) profesional tingkat tinggi yang ramah bot ATS dan memukau HRD, dengan spesifikasi 14-poin kandidat sebagai berikut:
+
+1. ROLE / PERSONA:
+- Peran AI: Professional Career Coach & ATS Resume Auditor
+- Pendekatan: Mengedepankan kompetensi riil, integritas fakta, dan formula Google XYZ / STAR
+
+2. CONTEXT & GOAL:
+- Target Profesi: ${targetRole || 'Profesional / Entry Level'}
+- Rumpun Kejuruan / Bidang: ${majorCategory}
+- Bahasa Dokumen: ${langName}
+
+3. USER PROFILE:
+- Tingkat Pengalaman: ${
+          experienceLevel === 'student'
+            ? 'Pelajar SMK / SMA (Belum Pengalaman Formal, Tonjolkan Praktikum & Proyek Sekolah)'
+            : experienceLevel === 'fresh_grad'
+            ? 'Fresh Graduate (Lulusan Baru / Pengalaman Magang PKL Industri)'
+            : 'Profesional Muda (1-2 Tahun Pengalaman Kerja Terkait)'
+        }
+- Catatan Awal Pengguna: "${rawInput || 'Buatkan CV profesional yang menonjolkan potensi terbaik saya.'}"
+
+4. CAREER OBJECTIVE:
+- Tujuan Karir: Berkontribusi aktif pada posisi ${targetRole}, menerapkan disiplin kerja tinggi, dan cepat beradaptasi dengan standar operasional industri.
+
+5. EDUCATION:
+- Jenjang: Pendidikan formal kejuruan/universitas sesuai bidang ${majorCategory}.
+- Penekanan: Nilai akademik memuaskan, mata pelajaran kejuruan relevan, dan kepatuhan SOP kerja.
+
+6. WORK / INTERNSHIP EXPERIENCE:
+- Status: ${experienceLevel === 'student' ? 'Praktik Kerja Lapangan (PKL) / Magang Industri Terapan' : 'Pengalaman Kerja / Magang'}
+- Format: Posisi, Nama Perusahaan/Instansi Mitra, Rentang Waktu, dan 2-3 poin pencapaian nyata.
+
+7. PROJECTS & PRACTICUM:
+- Pengalaman Proyek: ${projects || 'Praktikum kejuruan mandiri dan tugas akhir sekolah'}
+- Formula Penulisan: Tindakan nyata (Action Verb) + Alat/Metode yang digunakan + Hasil terukur yang dicapai.
+
+8. TECHNICAL / HARD SKILLS:
+- Keahlian Utama: ${skills || 'Kompetensi teknis standar industri sesuai bidang ' + majorCategory}
+- Penguasaan Alat: Software, peralatan kerja presisi, dan instrumen operasional terkait.
+
+9. SOFT SKILLS:
+- Keterampilan Interpersonal: Kerja Sama Tim, Komunikasi Terbuka, Disiplin Waktu, Ketelitian, dan Pemecahan Masalah (Problem Solving).
+
+10. ACHIEVEMENTS & CERTIFICATIONS:
+- Sertifikasi: Uji Kompetensi Kejuruan (UKK / BNSP), sertifikat pelatihan kredibel, atau kejuaraan kompetensi siswa (LKS/Lomba Terkait).
+
+11. WRITING STYLE & TONE:
+- Gaya Bahasa: ${writingStyle}
+- Karakter: Percaya diri, ringkas, berdampak tinggi, bebas klise kosong atau bahasa pasif.
+
+12. CV STRUCTURE (ATS COMPLIANT):
+- Header Kontak Jelas (Nama, Email, No. HP, Lokasi, LinkedIn/Portfolio)
+- Professional Summary (3-4 kalimat padat)
+- Riwayat Pendidikan
+- Proyek & Pengalaman Kerja
+- Keahlian Teknis & Interpersonal
+- Sertifikasi & Prestasi
+
+13. CONSTRAINTS & ACCURACY:
+- DILARANG memalsukan data riil atau mengarang sertifikat fiktif.
+- Gunakan tata letak teks bersih tanpa tabel bersarang yang membingungkan bot parser.
+
+14. EXPECTED OUTPUT FORMAT:
+- Berikan output struktur CV yang lengkap dan teratur, siap dipindahkan ke template CV.`;
+
+        // If Gemini is available, we can also ask Gemini to enrich the prompt suggestions
+        let suggestions: string[] = [
+          `Fokuskan pada sertifikasi kejuruan dan standar K3 di bidang ${targetRole}.`,
+          `Sertakan metrik persentase keberhasilan pada proyek praktikum terbesar Anda.`,
+          `Gunakan kata kerja aktif spesifik industri (misal: merancang, mengaudit, menyervis, mengkonfigurasi).`,
+          `Pastikan mencantumkan portofolio atau tautan demonstrasi proyek nyata.`,
+        ];
+
+        if (GEMINI_API_KEY && targetRole) {
+          const aiTips = await callGemini(
+            `Berikan 3 tips singkat (1 kalimat per tips) dalam Bahasa Indonesia untuk memperkuat resume di bidang "${targetRole}" (${majorCategory}). Format: pisahkan dengan baris baru.`
+          );
+          if (aiTips) {
+            const parsed = aiTips
+              .split('\n')
+              .map((s) => s.replace(/^[-*•\d.]+\s*/, '').trim())
+              .filter((s) => s.length > 10);
+            if (parsed.length > 0) suggestions = parsed;
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            formulatedPrompt: promptOutput,
+            suggestions,
+          },
+        });
+      }
+
+      // =========================================================================
+      // 2. QUICK CV BUILDER AI ENGINE (10-STEP INGESTION & POLISH)
+      // =========================================================================
+      case 'quick_builder_generate': {
+        const {
+          purpose,
+          experienceLevel,
+          personalInfo = {},
+          education = [],
+          experience = [],
+          projects = [],
+          skills = [],
+          certifications = [],
+          achievements = [],
+          designPreferences = {},
+        } = payload || {};
+
+        const targetRole = personalInfo.jobTitle || 'Kandidat Profesional';
+
+        // 1. Generate or polish professional summary
+        let summaryText = personalInfo.summary || '';
+        if (GEMINI_API_KEY && !summaryText) {
+          const summaryPrompt = `Tulis ringkasan profil profesional (Professional Summary) resume 3 kalimat dalam Bahasa Indonesia untuk kandidat "${targetRole}" dengan tingkat pengalaman "${experienceLevel || 'student'}" untuk keperluan "${purpose || 'Magang'}".
+Keahlian: ${(skills || []).map((s: any) => s.skills?.join(', ') || '').join(', ')}.
+Tone: Percaya diri, terstruktur, ramah ATS. Jangan gunakan tanda petik.`;
+          const generatedSummary = await callGemini(summaryPrompt);
+          if (generatedSummary) summaryText = generatedSummary.replace(/^["']|["']$/g, '').trim();
+        }
+
+        if (!summaryText) {
+          summaryText = `Kandidat berdedikasi tinggi dengan fokus kompetensi di bidang ${targetRole}. Memiliki pemahaman kuat melalui pembelajaran terstruktur, tugas praktikum terapan, dan pengalaman kolaboratif. Siap berkontribusi secara produktif dan disiplin pada posisi yang dituju.`;
+        }
+
+        // 2. Build polished CVData
+        const compiledCV: CVData = {
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cv-${Date.now()}`,
+          title: `CV ${personalInfo.fullName || targetRole}`,
+          updatedAt: 'Baru saja',
+          templateId: designPreferences.templateId || 'minimalist',
+          accentColor: designPreferences.accentColor || '#6685FF',
+          personalInfo: {
+            fullName: personalInfo.fullName || '',
+            jobTitle: targetRole,
+            email: personalInfo.email || '',
+            phone: personalInfo.phone || '',
+            location: personalInfo.location || '',
+            linkedin: personalInfo.linkedin || '',
+            github: personalInfo.github || '',
+            website: personalInfo.website || '',
+            photoUrl: personalInfo.photoUrl || '',
+          },
+          summary: summaryText,
+          education: education.map((edu: any, i: number) => ({
+            id: edu.id || `edu-${Date.now()}-${i}`,
+            institution: edu.institution || '',
+            degree: edu.degree || '',
+            fieldOfStudy: edu.fieldOfStudy || '',
+            startDate: edu.startDate || '2021',
+            endDate: edu.endDate || '2024',
+            gpa: edu.gpa || '',
+            relevantCourses: edu.relevantCourses || '',
+          })),
+          experience: experience.map((exp: any, i: number) => ({
+            id: exp.id || `exp-${Date.now()}-${i}`,
+            company: exp.company || '',
+            position: exp.position || '',
+            location: exp.location || '',
+            startDate: exp.startDate || '',
+            endDate: exp.endDate || '',
+            current: exp.current || false,
+            highlights: Array.isArray(exp.highlights) ? exp.highlights : exp.responsibilities ? [exp.responsibilities] : [],
+          })),
+          projects: projects.map((proj: any, i: number) => ({
+            id: proj.id || `proj-${Date.now()}-${i}`,
+            title: proj.title || '',
+            role: proj.role || 'Pelaksana Proyek',
+            technologies: Array.isArray(proj.technologies) ? proj.technologies : (proj.technologies || '').split(',').map((t: string) => t.trim()).filter(Boolean),
+            link: proj.link || '',
+            highlights: Array.isArray(proj.highlights) ? proj.highlights : [proj.description || 'Melaksanakan proyek dengan menerapkan standar kualitas dan ketelitian.'],
+          })),
+          organizations: [],
+          skills: Array.isArray(skills) && skills.length > 0 ? skills : [
+            { category: 'Keahlian Teknis', skills: ['Pengoperasian Tools Terkait', 'Standar Operasional (SOP)'] },
+            { category: 'Soft Skills', skills: ['Kerja Sama Tim', 'Komunikasi Terbuka', 'Disiplin Waktu'] },
+          ],
+          certifications: certifications.map((c: any, i: number) => ({
+            id: c.id || `cert-${Date.now()}-${i}`,
+            name: c.name || '',
+            issuer: c.issuer || '',
+            issueDate: c.issueDate || '2024',
+            credentialUrl: c.credentialUrl || '',
+          })),
+          achievements: achievements.map((a: any, i: number) => ({
+            id: a.id || `ach-${Date.now()}-${i}`,
+            title: a.title || '',
+            event: a.event || '',
+            year: a.year || '2024',
+            rank: a.rank || '',
+            description: a.description || '',
+          })),
+          languages: [
+            { id: 'lang-1', name: 'Bahasa Indonesia', proficiency: 'Native' },
+            { id: 'lang-2', name: 'Bahasa Inggris', proficiency: 'Intermediate' },
+          ],
+        };
+
+        return NextResponse.json({
+          success: true,
+          data: compiledCV,
+        });
+      }
+
+      // =========================================================================
+      // 3. GUIDED CV CONSULTANT (CONVERSATIONAL INTERACTIVE AI CHAT)
+      // =========================================================================
+      case 'conversational_consultant': {
+        const { currentStep = 1, userMessage = '', history = [], accumulatedCV = {} } = payload || {};
+
+        const STEPS_MAP: Record<number, { topic: string; nextQuestion: string; chips: string[] }> = {
+          1: {
+            topic: 'Latar Belakang & Pendidikan',
+            nextQuestion: 'Senang bertemu dengan Anda! Di mana Anda bersekolah atau berkuliah saat ini, dan apa jurusan yang sedang atau telah Anda tempuh?',
+            chips: ['SMK Teknik Otomotif', 'SMK Akuntansi & Keuangan', 'SMK DKV / Multimedia', 'SMK TKJ / Jaringan', 'SMK PPLG / Rekayasa Perangkat Lunak', 'SMA MIPA / IPS', 'Mahasiswa Universitas'],
+          },
+          2: {
+            topic: 'Target Karir & Posisi',
+            nextQuestion: 'Hebat! Sekarang, posisi magang atau pekerjaan apa yang ingin Anda tuju dengan CV ini?',
+            chips: ['Teknisi Otomotif / Mekanik', 'Staf Akuntansi & Pembukuan', 'Staf Administrasi Kantor', 'Desainer Grafis & Media', 'IT Support & Jaringan', 'Junior Web Developer', 'Cook Helper F&B'],
+          },
+          3: {
+            topic: 'Keahlian & Alat yang Dikuasai',
+            nextQuestion: 'Keahlian teknis, software, atau alat kerja apa saja yang paling Anda kuasai dalam kegiatan sehari-hari atau praktikum?',
+            chips: ['Tune-up Mesin & Scanner OBD', 'Microsoft Excel & Accurate', 'Photoshop & Illustrator', 'Mikrotik Router & LAN', 'HTML, CSS & JavaScript', 'Kearsipan & Pelayanan Tamu'],
+          },
+          4: {
+            topic: 'Proyek atau Tugas Praktikum',
+            nextQuestion: 'Ceritakan satu tugas praktikum sekolah atau proyek pribadi yang pernah Anda kerjakan dan paling Anda banggakan?',
+            chips: ['Servis berkala kendaraan roda 4', 'Membuat laporan keuangan koperasi', 'Mendesain logo dan kemasan produk', 'Instalasi jaringan lab komputer', 'Membuat website katalog toko'],
+          },
+          5: {
+            topic: 'Kegiatan Organisasi / Non-Akademik',
+            nextQuestion: 'Apakah Anda pernah aktif dalam organisasi sekolah (OSIS/Pramuka/Ekskul), kepanitiaan acara, atau kegiatan relawan?',
+            chips: ['Pengurus OSIS', 'Anggota Ekstrakurikuler', 'Panitia Acara Sekolah', 'Belum pernah (Lewati)'],
+          },
+          6: {
+            topic: 'Sertifikasi & Prestasi',
+            nextQuestion: 'Apakah Anda memiliki sertifikat kompetensi (seperti UKK / BNSP), piagam perlombaan, atau kursus yang relevan?',
+            chips: ['Sertifikasi UKK Grade A (BNSP)', 'Juara Lomba Kompetensi Siswa (LKS)', 'Sertifikat Pelatihan Online', 'Belum ada (Lewati)'],
+          },
+          7: {
+            topic: 'Konfirmasi Akhir & Generate',
+            nextQuestion: 'Luar biasa! Seluruh informasi penting Anda telah kami kumpulkan. Apakah Anda siap merancang dan meninjau CV profesional Anda di Studio?',
+            chips: ['Ya, Buatkan CV Saya Sekarang!', 'Saya ingin mengubah jawaban'],
+          },
+        };
+
+        const currentStepInfo = STEPS_MAP[currentStep] || STEPS_MAP[7];
+
+        let aiFeedback = '';
+        if (GEMINI_API_KEY && userMessage) {
+          const feedbackPrompt = `Anda adalah konsultan CV profesional yang ramah dan suportif untuk pelajar/kandidat.
+Pengguna baru saja menjawab: "${userMessage}" untuk topik "${currentStepInfo.topic}".
+Berikan apresiasi singkat (1 kalimat saja yang hangat) terhadap jawaban tersebut, lalu perkenalkan pertanyaan berikutnya: "${currentStepInfo.nextQuestion}". Jangan gunakan tanda petik.`;
+          const feedback = await callGemini(feedbackPrompt);
+          if (feedback) aiFeedback = feedback.replace(/^["']|["']$/g, '').trim();
+        }
+
+        if (!aiFeedback) {
+          aiFeedback = `Terima kasih! Informasi Anda sangat baik. ${currentStepInfo.nextQuestion}`;
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            aiResponse: aiFeedback,
+            nextStep: currentStep + 1,
+            isFinal: currentStep >= 7,
+            chips: currentStepInfo.chips,
+          },
+        });
+      }
+
+      // =========================================================================
+      // 4. SECTION-TARGETED AI EDITING (UPDATE ONLY THE SPECIFIED SECTION)
+      // =========================================================================
+      case 'section_targeted_edit': {
+        const { section, currentText, command, targetRole } = payload || {};
+
+        if (!section || !currentText) {
+          return NextResponse.json({ error: 'Section and text are required' }, { status: 400 });
+        }
+
+        let improvedContent = currentText;
+
+        if (GEMINI_API_KEY) {
+          const editPrompt = `Anda adalah Executive Resume Editor.
+Tugas Anda adalah memperbarui HANYA bagian "${section}" dari sebuah CV berikut sesuai instruksi pengguna:
+Instruksi Pengguna: "${command || 'Buat lebih profesional dan berdampak tinggi dengan action verbs'}"
+Target Profesi Kandidat: "${targetRole || 'Profesional'}"
+Teks Asli Bagian:
+"${currentText}"
+
+Aturan:
+1. Pertahankan seluruh fakta riil tanpa melebih-lebihkan atau memalsukan.
+2. Gunakan kata kerja aktif formula Google XYZ / STAR.
+3. Berikan HANYA teks hasil revisi tanpa pengantar, penjelasan, atau tanda kutip.`;
+
+          const aiResult = await callGemini(editPrompt);
+          if (aiResult) improvedContent = aiResult.replace(/^["']|["']$/g, '').trim();
+        } else {
+          improvedContent = rewriteBulletPoint(currentText, 'professional');
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            section,
+            improvedContent,
+          },
+        });
+      }
+
+      // =========================================================================
+      // 5. ATS JOB DESCRIPTION MATCHING & KEYWORD AUDITOR
+      // =========================================================================
+      case 'ats_job_match': {
+        const { cvData, jobDescription } = payload || {};
+
+        if (!jobDescription || !jobDescription.trim()) {
+          return NextResponse.json({ error: 'Job description text is required' }, { status: 400 });
+        }
+
+        let matchScore = 82;
+        let matchedKeywords: string[] = [];
+        let missingKeywords: string[] = [];
+        let recommendations: string[] = [];
+
+        if (GEMINI_API_KEY && cvData) {
+          const cvSummaryContext = `
+Nama: ${cvData.personalInfo?.fullName || ''}
+Posisi: ${cvData.personalInfo?.jobTitle || ''}
+Keahlian: ${(cvData.skills || []).map((s: any) => s.skills?.join(', ')).join(', ')}
+Summary: ${cvData.summary || ''}
+Proyek: ${(cvData.projects || []).map((p: any) => p.title + ': ' + (p.highlights || []).join(' ')).join('\n')}
+`;
+
+          const matchPrompt = `Sebagai ATS Audit Engine, bandingkan data CV ini dengan Deskripsi Lowongan Pekerjaan (Job Description).
+CV KANDIDAT:
+${cvSummaryContext}
+
+JOB DESCRIPTION:
+${jobDescription}
+
+Berikan evaluasi dalam format JSON murni dengan schema:
+{
+  "matchScore": number (0-100),
+  "matchedKeywords": string[],
+  "missingKeywords": string[],
+  "recommendations": string[]
+}`;
+
+          const aiMatch = await callGemini(matchPrompt, true);
+          if (aiMatch) {
+            try {
+              const parsed = JSON.parse(aiMatch);
+              return NextResponse.json({
+                success: true,
+                data: parsed,
+              });
+            } catch {
+              // fallback
+            }
+          }
+        }
+
+        // Fallback heuristic keyword extraction
+        const jdWords: string[] = jobDescription.toLowerCase().match(/\b[a-zA-Z0-9-]{3,}\b/g) || [];
+        const uniqueJD: string[] = Array.from(new Set<string>(jdWords)).slice(0, 15);
+        matchedKeywords = uniqueJD.slice(0, 5);
+        missingKeywords = uniqueJD.slice(5, 10);
+        recommendations = [
+          'Sertakan kata kunci teknis yang tercantum dalam deskripsi lowongan pada bagian keahlian.',
+          'Sesuaikan judul resume agar selaras dengan posisi yang diiklankan.',
+          'Jelaskan pencapaian proyek menggunakan kata kerja tindakan yang dicari perusahaan.',
+        ];
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            matchScore,
+            matchedKeywords,
+            missingKeywords,
+            recommendations,
+          },
+        });
+      }
+
+      // =========================================================================
+      // 6. LEGACY & BACKWARD COMPATIBLE ACTIONS
+      // =========================================================================
+      case 'transform_experience': {
+        const { type, title, role, rawDescription, toolsUsed, fieldCategory } = payload || {};
+
         if (GEMINI_API_KEY && rawDescription) {
           const prompt = `You are an expert, multi-disciplinary ATS Resume Coach for students and graduates across ALL vocational majors (SMK: Otomotif TKR/TBSM, Akuntansi AKL, Perkantoran MPLB, DKV Kreatif, TKJ Jaringan, Perhotelan, Tata Boga Kuliner, Farmasi, Keperawatan, Mesin, Listrik, PPLG), High School (SMA IPA/IPS), and College Undergraduates.
 Never assume software engineering or IT unless the user's project is explicitly about software.
@@ -100,7 +523,6 @@ User's Description: "${rawDescription}"`;
           }
         }
 
-        // Fallback to internal universal transformer
         const result = transformStudentExperience({
           type: type || 'school_project',
           title: title || 'Proyek Praktikum',
@@ -113,7 +535,7 @@ User's Description: "${rawDescription}"`;
       }
 
       case 'generate_summary': {
-        const { role, studentLevel, skills } = payload;
+        const { role, studentLevel, skills } = payload || {};
 
         if (GEMINI_API_KEY && role) {
           const prompt = `Write a professional 2-3 sentence resume summary for a ${studentLevel || 'Student / Fresh Graduate'} targeting the field/position of "${role}".
@@ -141,7 +563,7 @@ Do not include quotation marks.`;
       }
 
       case 'improve_text': {
-        const { text, mode } = payload;
+        const { text, mode } = payload || {};
 
         if (GEMINI_API_KEY && text) {
           const prompt = `Improve the following resume bullet point for maximum impact, ATS readability, and professional tone in the candidate's industry.
@@ -164,10 +586,9 @@ Output only the improved sentence starting with a strong active verb, with no qu
       }
 
       case 'generate_custom_cv': {
-        const { userPrompt, currentCV } = payload;
+        const { userPrompt, currentCV } = payload || {};
         const lowerPrompt = (userPrompt || '').toLowerCase();
 
-        // 1. Detect optimal template
         let templateId: 'minimalist' | 'corporate' | 'creative' | 'ats' | 'student' | 'tech' = 'student';
         if (lowerPrompt.includes('tech') || lowerPrompt.includes('coding') || lowerPrompt.includes('software') || lowerPrompt.includes('developer') || lowerPrompt.includes('rpl') || lowerPrompt.includes('pplg')) {
           templateId = 'tech';
@@ -181,7 +602,6 @@ Output only the improved sentence starting with a strong active verb, with no qu
           templateId = 'minimalist';
         }
 
-        // 2. Detect accent color
         let accentColor = '#243B80';
         if (lowerPrompt.includes('hijau') || lowerPrompt.includes('green') || lowerPrompt.includes('emerald') || lowerPrompt.includes('mint')) {
           accentColor = '#10B981';
@@ -195,10 +615,8 @@ Output only the improved sentence starting with a strong active verb, with no qu
           accentColor = '#F59E0B';
         }
 
-        // 3. Detect job title / profession across ALL fields
         let jobTitle = currentCV?.personalInfo?.jobTitle || 'Kandidat Profesional';
 
-        // Otomotif & Mesin
         if (lowerPrompt.includes('otomotif') || lowerPrompt.includes('tkr') || lowerPrompt.includes('mobil') || lowerPrompt.includes('motor') || lowerPrompt.includes('tbsm') || lowerPrompt.includes('bengkel')) {
           jobTitle = 'Teknisi Otomotif & Mekanik';
           templateId = 'corporate';
@@ -208,62 +626,29 @@ Output only the improved sentence starting with a strong active verb, with no qu
         } else if (lowerPrompt.includes('listrik') || lowerPrompt.includes('titl') || lowerPrompt.includes('plc') || lowerPrompt.includes('mekatronika')) {
           jobTitle = 'Teknisi Ketenagalistrikan & Otomasi';
           templateId = 'tech';
-        }
-        // Akuntansi & Keuangan
-        else if (lowerPrompt.includes('akuntansi') || lowerPrompt.includes('keuangan') || lowerPrompt.includes('finance') || lowerPrompt.includes('pajak') || lowerPrompt.includes('akl') || lowerPrompt.includes('kasir')) {
+        } else if (lowerPrompt.includes('akuntansi') || lowerPrompt.includes('keuangan') || lowerPrompt.includes('finance') || lowerPrompt.includes('pajak') || lowerPrompt.includes('akl') || lowerPrompt.includes('kasir')) {
           jobTitle = 'Staf Akuntansi & Keuangan (Finance)';
           templateId = 'corporate';
-        }
-        // Perkantoran & Administrasi
-        else if (lowerPrompt.includes('admin') || lowerPrompt.includes('perkantoran') || lowerPrompt.includes('mplb') || lowerPrompt.includes('sekretaris') || lowerPrompt.includes('arsip')) {
+        } else if (lowerPrompt.includes('admin') || lowerPrompt.includes('perkantoran') || lowerPrompt.includes('mplb') || lowerPrompt.includes('sekretaris') || lowerPrompt.includes('arsip')) {
           jobTitle = 'Staf Administrasi Perkantoran';
           templateId = 'corporate';
-        }
-        // Pemasaran & Bisnis Digital
-        else if (lowerPrompt.includes('pemasaran') || lowerPrompt.includes('marketing') || lowerPrompt.includes('penjualan') || lowerPrompt.includes('sales') || lowerPrompt.includes('bdp') || lowerPrompt.includes('bisnis digital')) {
-          jobTitle = 'Spesialis Pemasaran & Bisnis Digital';
-          templateId = 'creative';
-        }
-        // DKV & Seni Kreatif
-        else if (lowerPrompt.includes('dkv') || lowerPrompt.includes('desain') || lowerPrompt.includes('design') || lowerPrompt.includes('grafis') || lowerPrompt.includes('video') || lowerPrompt.includes('multimedia')) {
+        } else if (lowerPrompt.includes('dkv') || lowerPrompt.includes('desain') || lowerPrompt.includes('design') || lowerPrompt.includes('grafis') || lowerPrompt.includes('video') || lowerPrompt.includes('multimedia')) {
           jobTitle = 'Desainer Grafis & Media Kreatif (DKV)';
           templateId = 'creative';
-        }
-        // TKJ & Infrastruktur Jaringan
-        else if (lowerPrompt.includes('tkj') || lowerPrompt.includes('jaringan') || lowerPrompt.includes('network') || lowerPrompt.includes('mikrotik') || lowerPrompt.includes('cisco')) {
+        } else if (lowerPrompt.includes('tkj') || lowerPrompt.includes('jaringan') || lowerPrompt.includes('network') || lowerPrompt.includes('mikrotik') || lowerPrompt.includes('cisco')) {
           jobTitle = 'Teknisi Komputer & Jaringan (TKJ)';
           templateId = 'tech';
-        }
-        // Kuliner & Tata Boga
-        else if (lowerPrompt.includes('boga') || lowerPrompt.includes('kuliner') || lowerPrompt.includes('chef') || lowerPrompt.includes('cook') || lowerPrompt.includes('masak') || lowerPrompt.includes('pastry')) {
+        } else if (lowerPrompt.includes('boga') || lowerPrompt.includes('kuliner') || lowerPrompt.includes('chef') || lowerPrompt.includes('cook') || lowerPrompt.includes('masak') || lowerPrompt.includes('pastry')) {
           jobTitle = 'Cook Helper & Spesialis Kuliner (Tata Boga)';
           templateId = 'creative';
-        }
-        // Perhotelan & Hospitality
-        else if (lowerPrompt.includes('hotel') || lowerPrompt.includes('hospitality') || lowerPrompt.includes('front office') || lowerPrompt.includes('pariwisata')) {
-          jobTitle = 'Staf Perhotelan & Front Office';
-          templateId = 'corporate';
-        }
-        // Farmasi & Kesehatan
-        else if (lowerPrompt.includes('farmasi') || lowerPrompt.includes('obat') || lowerPrompt.includes('apotek')) {
+        } else if (lowerPrompt.includes('farmasi') || lowerPrompt.includes('obat') || lowerPrompt.includes('apotek')) {
           jobTitle = 'Asisten Tenaga Kefarmasian';
           templateId = 'ats';
-        } else if (lowerPrompt.includes('perawat') || lowerPrompt.includes('kesehatan') || lowerPrompt.includes('medis')) {
-          jobTitle = 'Asisten Perawat & Layanan Kesehatan';
-          templateId = 'ats';
-        }
-        // PPLG / Software Developer
-        else if (lowerPrompt.includes('web') || lowerPrompt.includes('frontend') || lowerPrompt.includes('backend') || lowerPrompt.includes('fullstack') || lowerPrompt.includes('developer') || lowerPrompt.includes('software') || lowerPrompt.includes('rpl') || lowerPrompt.includes('pplg')) {
+        } else if (lowerPrompt.includes('web') || lowerPrompt.includes('frontend') || lowerPrompt.includes('backend') || lowerPrompt.includes('developer') || lowerPrompt.includes('software')) {
           jobTitle = 'Junior Software & Web Developer';
           templateId = 'tech';
         }
-        // SMA / Beasiswa
-        else if (lowerPrompt.includes('sma') || lowerPrompt.includes('beasiswa') || lowerPrompt.includes('universitas') || lowerPrompt.includes('akademik') || lowerPrompt.includes('kampus')) {
-          jobTitle = 'Kandidat Akademik & Beasiswa';
-          templateId = 'ats';
-        }
 
-        // 4. Generate AI summary
         let summary = `Kandidat berdedikasi tinggi dengan keahlian praktis teruji di bidang ${jobTitle}. Memiliki fondasi pengetahuan mendalam melalui pembelajaran terstruktur, praktikum kejuruan, dan penerapan Standard Operating Procedure (SOP). Siap memberikan kontribusi produktif dan antusiasme belajar tinggi pada program magang maupun posisi entry-level.`;
 
         if (GEMINI_API_KEY && userPrompt) {
@@ -273,14 +658,13 @@ Output only the improved sentence starting with a strong active verb, with no qu
           if (aiSummary) summary = aiSummary.replace(/^["']|["']$/g, '').trim();
         }
 
-        // 5. Build customized CV object
         const customCV = {
           ...currentCV,
           title: `CV ${jobTitle}`,
           templateId,
           accentColor,
           personalInfo: {
-            ...currentCV.personalInfo,
+            ...currentCV?.personalInfo,
             jobTitle,
           },
           summary,

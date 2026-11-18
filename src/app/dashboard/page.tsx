@@ -38,6 +38,7 @@ import {
   User,
   Volume2,
   VolumeX,
+  Bot,
 } from 'lucide-react';
 import { CVData } from '@/types/cv';
 import { getActiveCV, saveActiveCV } from '@/lib/storage';
@@ -437,32 +438,25 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {[
                   {
-                    label: 'AI Custom CV',
-                    sub: 'Desain Otomatis',
+                    label: 'Quick Builder',
+                    sub: '10 Langkah Cepat',
+                    icon: FileText,
+                    color: 'bg-blue-100 text-blue-700',
+                    action: () => router.push('/quick-builder'),
+                  },
+                  {
+                    label: 'Guided AI',
+                    sub: 'Tanya Jawab Santai',
+                    icon: Bot,
+                    color: 'bg-emerald-100 text-emerald-700',
+                    action: () => router.push('/guided-builder'),
+                  },
+                  {
+                    label: 'Prompt Builder',
+                    sub: '14-Poin & Salin',
                     icon: Wand2,
                     color: 'bg-purple-100 text-purple-700',
-                    action: () => router.push('/builder'),
-                  },
-                  {
-                    label: 'Student Mode',
-                    sub: 'Khusus Pelajar/SMK',
-                    icon: GraduationCap,
-                    color: 'bg-blue-100 text-blue-700',
-                    action: () => router.push('/student-mode'),
-                  },
-                  {
-                    label: 'ATS Scanner',
-                    sub: 'Cek Skor Bot',
-                    icon: ShieldCheck,
-                    color: 'bg-emerald-100 text-emerald-700',
-                    action: () => router.push('/ats-checker'),
-                  },
-                  {
-                    label: 'Ekspor PDF',
-                    sub: 'Standar Cetak A4',
-                    icon: Download,
-                    color: 'bg-indigo-100 text-indigo-700',
-                    action: () => router.push('/builder'),
+                    action: () => router.push('/prompt-builder'),
                   },
                   {
                     label: 'Template CV',
@@ -472,18 +466,25 @@ export default function DashboardPage() {
                     action: () => router.push('/templates'),
                   },
                   {
-                    label: 'Gemini AI',
-                    sub: 'Poles Tata Bahasa',
-                    icon: Sparkles,
-                    color: 'bg-sky-100 text-sky-700',
+                    label: 'Studio CV',
+                    sub: 'Live Canvas & Edit',
+                    icon: Folder,
+                    color: 'bg-indigo-100 text-indigo-700',
                     action: () => router.push('/builder'),
                   },
                   {
-                    label: 'GitHub Repo',
-                    sub: 'Kode Sumber',
-                    icon: ExternalLink,
-                    color: 'bg-slate-100 text-slate-800',
-                    action: () => window.open('https://github.com/FazleDzakyA/cvmaker', '_blank'),
+                    label: 'ATS Scanner',
+                    sub: 'Cek Skor Bot',
+                    icon: ShieldCheck,
+                    color: 'bg-sky-100 text-sky-700',
+                    action: () => router.push('/ats-checker'),
+                  },
+                  {
+                    label: 'Ekspor PDF',
+                    sub: 'Standar Cetak A4',
+                    icon: Download,
+                    color: 'bg-teal-100 text-teal-700',
+                    action: () => router.push('/builder'),
                   },
                   {
                     label: 'Lembar Kosong',

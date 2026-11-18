@@ -60,16 +60,8 @@ export default function GuidedBuilderPage() {
     {
       id: 'msg-welcome',
       sender: 'ai',
-      text: 'Halo! Saya Konsultan Karir & Pembuat CV AI CVGenie. Saya akan memandu Anda langkah demi langkah menyusun CV yang profesional, terstruktur, dan siap lolos bot ATS.\n\nMari kita mulai: Di mana Anda bersekolah atau kuliah saat ini, dan apa jurusan atau program studi Anda?',
-      chips: [
-        'SMK Teknik Otomotif (TKR/TBSM)',
-        'SMK Akuntansi & Keuangan (AKL)',
-        'SMK Desain Komunikasi Visual (DKV)',
-        'SMK Teknik Komputer & Jaringan (TKJ)',
-        'SMK Rekayasa Perangkat Lunak (PPLG)',
-        'SMA Negeri (MIPA / IPS)',
-        'Mahasiswa Universitas',
-      ],
+      text: 'Halo! Saya Konsultan Karir & Pembuat CV AI CVGenie. Saya akan memandu Anda langkah demi langkah menyusun CV yang profesional, terstruktur, dan siap lolos bot ATS.\n\nMari kita mulai: Di mana Anda bersekolah atau berkuliah saat ini, dan apa jurusan atau program studi Anda? (Ketik bebas nama sekolah dan jurusan Anda pada kolom input di bawah)',
+      chips: [],
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -332,8 +324,14 @@ export default function GuidedBuilderPage() {
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Ketik jawaban Anda di sini atau pilih opsi di atas..."
-                    className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#172B49]/20 text-[#172B49]"
+                    placeholder={
+                      stepIndex === 1
+                        ? 'Ketik nama sekolah/kampus dan jurusan Anda bebas di sini...'
+                        : stepIndex === 2
+                        ? 'Ketik target posisi magang / kerja yang Anda tuju...'
+                        : 'Ketik jawaban Anda di sini atau gunakan opsi cepat...'
+                    }
+                    className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#172B49]/20 text-[#172B49] placeholder:text-[#718096]"
                   />
 
                   <button

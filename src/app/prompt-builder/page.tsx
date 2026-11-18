@@ -31,7 +31,7 @@ export default function PromptBuilderPage() {
   // Inputs
   const [userPrompt, setUserPrompt] = useState<string>('');
   const [targetRole, setTargetRole] = useState<string>('');
-  const [majorCategory, setMajorCategory] = useState<string>('Teknik Otomotif (TKR/TBSM)');
+  const [majorCategory, setMajorCategory] = useState<string>('');
   const [experienceLevel, setExperienceLevel] = useState<string>('student');
   const [skillsInput, setSkillsInput] = useState<string>('');
   const [projectsInput, setProjectsInput] = useState<string>('');
@@ -285,23 +285,13 @@ export default function PromptBuilderPage() {
                     <label className="block text-[11px] font-bold text-[#172B49] mb-1">
                       Jurusan / Bidang Kejuruan:
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={majorCategory}
                       onChange={(e) => setMajorCategory(e.target.value)}
-                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[#172B49] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                      <option value="Teknik Otomotif (TKR/TBSM)">Teknik Otomotif (TKR/TBSM)</option>
-                      <option value="Akuntansi & Keuangan (AKL)">Akuntansi & Keuangan (AKL)</option>
-                      <option value="Manajemen Perkantoran (MPLB)">Manajemen Perkantoran (MPLB)</option>
-                      <option value="Desain Komunikasi Visual (DKV)">Desain Komunikasi Visual (DKV)</option>
-                      <option value="Teknik Komputer & Jaringan (TKJ)">Teknik Komputer & Jaringan (TKJ)</option>
-                      <option value="Rekayasa Perangkat Lunak (PPLG)">Rekayasa Perangkat Lunak (PPLG)</option>
-                      <option value="Tata Boga & Kuliner">Tata Boga & Kuliner</option>
-                      <option value="Perhotelan & Pariwisata">Perhotelan & Pariwisata</option>
-                      <option value="Farmasi & Tenaga Kesehatan">Farmasi & Tenaga Kesehatan</option>
-                      <option value="SMA (MIPA / IPS / Bahasa)">SMA (MIPA / IPS / Bahasa)</option>
-                      <option value="Mahasiswa / Fresh Graduate">Mahasiswa / Fresh Graduate</option>
-                    </select>
+                      placeholder="Ketik jurusanmu bebas (e.g. Tata Boga, Mesin, Akuntansi, Manajemen...)"
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-[#172B49] focus:outline-none focus:ring-2 focus:ring-blue-500/20 placeholder:text-[#718096]"
+                    />
                   </div>
                 </div>
 

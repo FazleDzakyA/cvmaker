@@ -306,7 +306,7 @@ Tone: Percaya diri, terstruktur, ramah ATS. Jangan gunakan tanda petik.`;
           1: {
             topic: 'Latar Belakang & Pendidikan',
             nextQuestion: 'Senang bertemu dengan Anda! Di mana Anda bersekolah atau berkuliah saat ini, dan apa jurusan yang sedang atau telah Anda tempuh?',
-            chips: ['SMK Teknik Otomotif', 'SMK Akuntansi & Keuangan', 'SMK DKV / Multimedia', 'SMK TKJ / Jaringan', 'SMK PPLG / Rekayasa Perangkat Lunak', 'SMA MIPA / IPS', 'Mahasiswa Universitas'],
+            chips: [],
           },
           2: {
             topic: 'Target Karir & Posisi',

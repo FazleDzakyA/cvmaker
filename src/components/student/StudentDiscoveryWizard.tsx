@@ -123,8 +123,8 @@ export const StudentDiscoveryWizard: React.FC = () => {
   const [studentInfo, setStudentInfo] = useState({
     schoolType: 'SMK (Kejuruan)',
     schoolName: '',
-    major: MAJOR_PRESETS['otomotif'].label,
-    targetRole: MAJOR_PRESETS['otomotif'].defaultRole,
+    major: '',
+    targetRole: '',
     gradYear: '2025',
   });
 
@@ -347,15 +347,26 @@ export const StudentDiscoveryWizard: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div>
               <label className="block text-xs font-semibold text-[#172B49] mb-1">Nama Sekolah</label>
               <input
                 type="text"
                 value={studentInfo.schoolName}
                 onChange={(e) => setStudentInfo({ ...studentInfo, schoolName: e.target.value })}
-                placeholder="Contoh: SMK Negeri 1 Jakarta / SMA Negeri 3"
-                className="w-full text-xs p-3 rounded-xl glass-inset bg-white border border-slate-200 text-[#172B49] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20"
+                placeholder="Contoh: SMK Negeri 1 / SMA 3"
+                className="w-full text-xs p-3 rounded-xl glass-inset bg-white border border-slate-200 text-[#172B49] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20 placeholder:text-[#718096]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#172B49] mb-1">Jurusan / Bidang Keahlian</label>
+              <input
+                type="text"
+                value={studentInfo.major}
+                onChange={(e) => setStudentInfo({ ...studentInfo, major: e.target.value })}
+                placeholder="Ketik jurusanmu bebas (e.g. Tata Boga, Mesin...)"
+                className="w-full text-xs p-3 rounded-xl glass-inset bg-white border border-slate-200 text-[#172B49] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20 placeholder:text-[#718096]"
               />
             </div>
 
@@ -365,8 +376,8 @@ export const StudentDiscoveryWizard: React.FC = () => {
                 type="text"
                 value={studentInfo.targetRole}
                 onChange={(e) => setStudentInfo({ ...studentInfo, targetRole: e.target.value })}
-                placeholder="Contoh: Teknisi Magang / Staf Keuangan"
-                className="w-full text-xs p-3 rounded-xl glass-inset bg-white border border-slate-200 text-[#172B49] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20"
+                placeholder="Contoh: Teknisi Magang / Cook Helper"
+                className="w-full text-xs p-3 rounded-xl glass-inset bg-white border border-slate-200 text-[#172B49] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20 placeholder:text-[#718096]"
               />
             </div>
           </div>

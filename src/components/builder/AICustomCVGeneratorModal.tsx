@@ -35,7 +35,7 @@ export const AICustomCVGeneratorModal: React.FC<AICustomCVGeneratorModalProps> =
   // Form States
   const [formData, setFormData] = useState({
     targetRole: '',
-    majorCategory: 'smk_otomotif',
+    majorCategory: '',
     experienceLevel: 'student',
     skills: '',
     projectsOrPracticum: '',
@@ -111,7 +111,7 @@ export const AICustomCVGeneratorModal: React.FC<AICustomCVGeneratorModalProps> =
 
   // Build the formulated professional prompt based on form data
   const formulatePrompt = () => {
-    const selectedMajor = MAJOR_OPTIONS.find((m) => m.value === formData.majorCategory)?.label || formData.majorCategory;
+    const selectedMajor = formData.majorCategory?.trim() || 'Umum (Sesuai Kualifikasi)';
     const role = formData.targetRole || 'Profesional / Entry Level';
     const lang = formData.language === 'en' ? 'Bahasa Inggris (English)' : 'Bahasa Indonesia';
 
@@ -219,7 +219,7 @@ d. Hindari klise kosong dan jangan menggunakan format tabel bersarang yang membi
     setFormData({
       ...formData,
       targetRole: p.role,
-      majorCategory: p.major,
+      majorCategory: p.category,
       skills: p.skills,
       projectsOrPracticum: p.projects,
     });
@@ -305,29 +305,21 @@ d. Hindari klise kosong dan jangan menggunakan format tabel bersarang yang membi
           {/* TAB 1: FORM KUESIONER */}
           {activeTab === 'form' && (
             <div className="space-y-4">
-              {/* Field 1: Rumpun Jurusan / Bidang */}
+              {/* Field 1: Jurusan atau Bidang Keahlian (Bebas diisi pengguna) */}
               <div>
                 <label className="block text-xs font-bold text-[#172B49] mb-1">
                   1. Jurusan atau Bidang Keahlian:
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.majorCategory}
-                  onChange={(e) => {
-                    const sel = MAJOR_OPTIONS.find((m) => m.value === e.target.value);
-                    setFormData({
-                      ...formData,
-                      majorCategory: e.target.value,
-                      targetRole: formData.targetRole || sel?.rolePlaceholder || '',
-                    });
-                  }}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-[#172B49]"
-                >
-                  {MAJOR_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(e) => setFormData({ ...formData, majorCategory: e.target.value })}
+                  placeholder="Ketik jurusan atau bidang keahlianmu bebas (misal: Tata Boga, Teknik Mesin, S1 Manajemen, Farmasi...)"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-[#172B49] placeholder:text-[#718096]"
+                />
+                <span className="text-[10px] text-[#718096] mt-1 block">
+                  Ketik bebas jurusan atau bidang studi Anda agar AI menyesuaikan prompt dan materi CV sesuai kebutuhan spesifik Anda.
+                </span>
               </div>
 
               {/* Field 2: Target Posisi / Profesi */}

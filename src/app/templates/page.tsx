@@ -94,12 +94,12 @@ export default function TemplatesPage() {
                   {/* Visual Document Preview Sheet Container */}
                   <div
                     onClick={() => setPreviewTemplate(tpl)}
-                    className="w-full h-56 rounded-2xl bg-white border border-slate-200 overflow-hidden relative cursor-pointer group-hover:border-blue-400 transition-all shadow-inner flex items-center justify-center mb-4"
+                    className="w-full h-56 rounded-2xl bg-white border border-slate-200 overflow-hidden relative cursor-pointer group-hover:border-blue-400 transition-all shadow-inner mb-4"
                   >
-                    <div className="transform scale-[0.38] origin-top pointer-events-none mt-2">
+                    <div className="w-[794px] absolute left-1/2 -translate-x-1/2 top-1 origin-top pointer-events-none">
                       <CVRenderer
                         data={{ ...samplePreviewCVData, templateId: tpl.id }}
-                        scale={1}
+                        scale={0.38}
                         containerId={`grid-preview-${tpl.id}`}
                       />
                     </div>

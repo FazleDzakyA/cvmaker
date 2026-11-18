@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Sparkles, ArrowRight, Menu, X, GraduationCap, FileText, CheckCircle2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Sparkles, ArrowRight, Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -17,6 +20,13 @@ export const Navbar: React.FC = () => {
     { name: 'ATS Checker', href: '/ats-checker' },
     { name: 'Dashboard', href: '/dashboard' },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  const displayName = profile?.fullName || user?.email?.split('@')[0] || '';
 
   return (
     <nav className="sticky top-0 z-50 w-full px-4 sm:px-6 lg:px-8 py-3.5 transition-all">
@@ -55,19 +65,42 @@ export const Navbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="hidden sm:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors px-2 py-1"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/builder"
-            className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-blue-500/25 hover:shadow-blue-500/40 transition-all flex items-center gap-1.5 hover:gap-2"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 hover:bg-white border border-white/80 text-xs font-bold text-slate-800 shadow-sm transition-all"
+              >
+                <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                  {displayName.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="max-w-[100px] truncate">{displayName}</span>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                title="Log Out"
+                className="p-2 rounded-full text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors px-2 py-1"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/builder"
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-blue-500/25 hover:shadow-blue-500/40 transition-all flex items-center gap-1.5 hover:gap-2"
+              >
+                <span>Get Started</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu trigger */}
@@ -94,20 +127,38 @@ export const Navbar: React.FC = () => {
             </Link>
           ))}
           <div className="border-t border-slate-200/60 pt-3 flex items-center justify-between">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-xs font-semibold text-slate-700"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/builder"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-2 rounded-full bg-blue-600 text-white text-xs font-semibold"
-            >
-              Create Free CV
-            </Link>
+            {user ? (
+              <>
+                <span className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{displayName}</span>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-semibold flex items-center gap-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log Out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-xs font-semibold text-slate-700"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/builder"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 rounded-full bg-blue-600 text-white text-xs font-semibold"
+                >
+                  Create Free CV
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -18,10 +18,10 @@ import {
   ArrowLeft,
   Wand2,
   Database,
-  CloudCheck,
+  RotateCcw,
 } from 'lucide-react';
 import { CVData } from '@/types/cv';
-import { defaultCVData } from '@/data/initialCVData';
+import { blankCVData } from '@/data/initialCVData';
 import { getActiveCV, saveActiveCV } from '@/lib/storage';
 import { SectionForm } from '@/components/builder/SectionForm';
 import { CVRenderer } from '@/components/templates/CVRenderer';
@@ -34,7 +34,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function BuilderPage() {
   const { user, isConfigured, saveCVToDB } = useAuth();
-  const [cvData, setCvData] = useState<CVData>(defaultCVData);
+  const [cvData, setCvData] = useState<CVData>(blankCVData);
   const [zoomScale, setZoomScale] = useState<number>(0.85);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(true);
@@ -50,6 +50,17 @@ export default function BuilderPage() {
       setCvData(saved);
     }
   }, []);
+
+  const handleResetBlank = () => {
+    if (confirm('Kosongkan semua data dan mulai CV baru dari lembar kosong?')) {
+      const fresh: CVData = {
+        ...blankCVData,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cv-${Date.now()}`,
+      };
+      setCvData(fresh);
+      saveActiveCV(fresh);
+    }
+  };
 
   // Auto-save on changes (LocalStorage + Supabase DB)
   const handleDataChange = async (updated: CVData) => {
@@ -116,6 +127,16 @@ export default function BuilderPage() {
 
           {/* Right Toolbar Actions */}
           <div className="flex items-center gap-2">
+            {/* New / Reset Blank CV */}
+            <button
+              onClick={handleResetBlank}
+              className="px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-200 shadow-sm"
+              title="Kosongkan dan mulai CV baru dari lembar kosong"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Mulai Lembar Kosong</span>
+            </button>
+
             {/* AI Custom CV Generator Button ("Kalau ga suka template nya, AI nya suruh buat") */}
             <button
               onClick={() => setAiCustomModalOpen(true)}

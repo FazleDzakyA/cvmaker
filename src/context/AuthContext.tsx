@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { CVData } from '@/types/cv';
 import { getStoredCVs, saveStoredCVs, getActiveCV, saveActiveCV } from '@/lib/storage';
-import { defaultCVData } from '@/data/initialCVData';
 
 export interface UserProfile {
   id: string;
@@ -12,6 +11,7 @@ export interface UserProfile {
   fullName: string;
   avatarUrl?: string;
   jobTitle?: string;
+  institution?: string;
 }
 
 interface AuthContextType {
@@ -24,6 +24,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   saveCVToDB: (cv: CVData) => Promise<{ success: boolean; error?: string }>;
+  deleteCVFromDB: (cvId: string) => Promise<{ success: boolean; error?: string }>;
   fetchUserCVs: () => Promise<CVData[]>;
 }
 
@@ -37,6 +38,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
   signOut: async () => {},
   saveCVToDB: async () => ({ success: false }),
+  deleteCVFromDB: async () => ({ success: false }),
   fetchUserCVs: async () => [],
 });
 
@@ -49,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) {
-      // Use local session demo
+      // Local fallback without Supabase
       const localUser = localStorage.getItem('cvgenie_auth_user');
       if (localUser) {
         try {
@@ -60,16 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // ignore
         }
       } else {
-        // Default demo profile matching Fazle Dzaky
-        const demoProfile = {
-          id: 'demo-fazle',
-          email: 'fazle.dzaky@gmail.com',
-          fullName: 'Fazle Dzaky Aryaguna',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120',
-          jobTitle: 'Software Developer',
-        };
-        setUser(demoProfile);
-        setProfile(demoProfile);
+        setUser(null);
+        setProfile(null);
       }
       setIsLoading(false);
       return;
@@ -84,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setProfile(null);
       }
+      setIsLoading(false);
+    }).catch(() => {
       setIsLoading(false);
     });
 
@@ -121,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fullName: data.full_name,
           avatarUrl: data.avatar_url,
           jobTitle: data.job_title,
+          institution: data.institution,
         });
       } else {
         setProfile({
@@ -137,12 +134,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, fullName: string) => {
     const supabase = createClient();
     if (!supabase) {
-      // Offline/Local Demo registration
-      const newUser = {
+      const newUser: UserProfile = {
         id: `user-${Date.now()}`,
         email,
         fullName,
-        jobTitle: 'Aspiring Professional',
       };
       localStorage.setItem('cvgenie_auth_user', JSON.stringify(newUser));
       setUser(newUser);
@@ -167,11 +162,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         setUser(data.user);
-        setProfile({
+        const newProf: UserProfile = {
           id: data.user.id,
           email: data.user.email || email,
           fullName,
-        });
+        };
+        setProfile(newProf);
       }
 
       return { success: true };
@@ -183,17 +179,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     const supabase = createClient();
     if (!supabase) {
-      // Offline/Local Demo sign in
-      const demoUser = {
-        id: 'user-fazle',
+      const localUser: UserProfile = {
+        id: `user-${Date.now()}`,
         email,
-        fullName: email.includes('fazle') ? 'Fazle Dzaky Aryaguna' : email.split('@')[0],
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120',
-        jobTitle: 'Software Developer',
+        fullName: email.split('@')[0],
       };
-      localStorage.setItem('cvgenie_auth_user', JSON.stringify(demoUser));
-      setUser(demoUser);
-      setProfile(demoUser);
+      localStorage.setItem('cvgenie_auth_user', JSON.stringify(localUser));
+      setUser(localUser);
+      setProfile(localUser);
       return { success: true };
     }
 
@@ -220,25 +213,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     const supabase = createClient();
-    if (!supabase) {
-      // Local fallback
-      const googleUser = {
-        id: 'google-fazle',
-        email: 'fazle.dzaky@gmail.com',
-        fullName: 'Fazle Dzaky Aryaguna',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120',
-        jobTitle: 'Software Developer',
-      };
-      localStorage.setItem('cvgenie_auth_user', JSON.stringify(googleUser));
-      setUser(googleUser);
-      setProfile(googleUser);
-      return;
-    }
+    if (!supabase) return;
 
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`,
       },
     });
   };
@@ -246,7 +226,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     const supabase = createClient();
     if (supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error('Sign out error:', e);
+      }
     }
     localStorage.removeItem('cvgenie_auth_user');
     setUser(null);
@@ -254,12 +238,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveCVToDB = async (cv: CVData): Promise<{ success: boolean; error?: string }> => {
-    // Save to local storage first
     saveActiveCV(cv);
 
     const supabase = createClient();
     if (!supabase || !user) {
-      return { success: true }; // saved to local
+      return { success: true };
     }
 
     try {
@@ -272,10 +255,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const payload: any = {
         user_id: user.id,
-        title: cv.title || 'My Professional CV',
+        title: cv.title || 'Untitled CV',
         template_id: cv.templateId,
         accent_color: cv.accentColor,
-        ats_score: 98,
+        ats_score: 95,
         content: cv,
         updated_at: new Date().toISOString(),
       };
@@ -297,6 +280,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteCVFromDB = async (cvId: string): Promise<{ success: boolean; error?: string }> => {
+    const current = getStoredCVs().filter(c => c.id !== cvId);
+    saveStoredCVs(current);
+
+    const supabase = createClient();
+    if (!supabase || !user) {
+      return { success: true };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('resumes')
+        .delete()
+        .eq('id', cvId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
   const fetchUserCVs = async (): Promise<CVData[]> => {
     const supabase = createClient();
     if (!supabase || !user) {
@@ -310,19 +318,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
-      if (data && !error && data.length > 0) {
-        const parsed = data.map((d: any) => ({
-          ...d.content,
-          id: d.id,
-          title: d.title,
-          templateId: d.template_id,
-          accentColor: d.accent_color,
-          updatedAt: 'Recently synced with Supabase',
-        }));
-        saveStoredCVs(parsed);
-        return parsed;
+      if (error || !data || data.length === 0) {
+        return getStoredCVs();
       }
-      return getStoredCVs();
+
+      const dbCVs: CVData[] = data.map((item: any) => ({
+        ...item.content,
+        id: item.id,
+        title: item.title,
+        templateId: item.template_id,
+        accentColor: item.accent_color,
+        updatedAt: new Date(item.updated_at).toLocaleDateString(),
+      }));
+
+      return dbCVs;
     } catch {
       return getStoredCVs();
     }
@@ -340,6 +349,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signOut,
         saveCVToDB,
+        deleteCVFromDB,
         fetchUserCVs,
       }}
     >

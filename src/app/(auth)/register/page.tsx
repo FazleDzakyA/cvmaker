@@ -9,9 +9,9 @@ import { useAuth } from '@/context/AuthContext';
 export default function RegisterPage() {
   const router = useRouter();
   const { signUp, isConfigured } = useAuth();
-  const [fullName, setFullName] = useState('Fazle Dzaky Aryaguna');
-  const [email, setEmail] = useState('fazle.dzaky@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 

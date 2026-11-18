@@ -1,0 +1,140 @@
+/* ========================================================
+   CVGENIE - LIQUID GLASS & GLASSMORPHISM DESIGN SYSTEM
+   Palette:
+   - Midnight Navy: #101A3C
+   - Deep Blue: #243B80
+   - Electric Blue: #6685FF
+   - Soft Lavender: #A99AFF
+   - Glass White: rgba(255, 255, 255, 0.15)
+   - Background: #EEF1FF
+   - Text: #18234A
+   ======================================================== */
+
+@layer utilities {
+  /* Translucent Liquid Glass Surface */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 
+      0 12px 36px -6px rgba(16, 26, 60, 0.08),
+      0 4px 12px -2px rgba(16, 26, 60, 0.04),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  /* Deep Translucent Glass (Hero and Dark Cards) */
+  .glass-card-dark {
+    background: rgba(16, 26, 60, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 
+      0 20px 50px -10px rgba(16, 26, 60, 0.4),
+      inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+  }
+
+  /* Frosted Glass Pill / Interactive */
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 
+      0 4px 14px 0 rgba(36, 59, 128, 0.06),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  /* Hover transitions */
+  .glass-interactive {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-interactive:hover {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 
+      0 18px 40px -8px rgba(36, 59, 128, 0.14),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+  }
+
+  /* Electric Luminous Glows */
+  .glow-electric {
+    box-shadow: 0 0 35px -5px rgba(102, 133, 255, 0.45);
+  }
+  .glow-lavender {
+    box-shadow: 0 0 35px -5px rgba(169, 154, 255, 0.45);
+  }
+  .glow-button {
+    box-shadow: 0 8px 24px -4px rgba(102, 133, 255, 0.45);
+  }
+  .glow-button:hover {
+    box-shadow: 0 12px 30px -2px rgba(102, 133, 255, 0.6);
+  }
+
+  /* Luminous Thin Border */
+  .luminous-border {
+    position: relative;
+  }
+  .luminous-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(102, 133, 255, 0.5), rgba(169, 154, 255, 0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Ambient mesh background */
+.cvgenie-ambient-bg {
+  background-color: #EEF1FF;
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(102, 133, 255, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(169, 154, 255, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+    radial-gradient(circle at 80% 85%, rgba(36, 59, 128, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 20% 90%, rgba(102, 133, 255, 0.18) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Deep Hero Gradient Mesh for the landing header visual */
+.cvgenie-hero-gradient {
+  background: radial-gradient(circle at 20% 20%, #243B80 0%, #101A3C 60%, #0A1026 100%);
+}
+
+/* A4 Paper Dimensions and Print Styling */
+.a4-document-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #18234A;
+  box-shadow: 0 15px 40px rgba(16, 26, 60, 0.12);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media print {
+  body {
+    background: transparent !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .a4-document-sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    page-break-after: always;
+  }
+}

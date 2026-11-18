@@ -140,7 +140,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ cvData, onChange }) =>
                     })
                   }
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
-                  placeholder="e.g. Fazle Dzaky Aryaguna"
+                  placeholder="e.g. Alex Morgan"
                 />
               </div>
 
@@ -172,7 +172,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ cvData, onChange }) =>
                     })
                   }
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
-                  placeholder="fazle.dzaky@gmail.com"
+                  placeholder="nama@email.com"
                 />
               </div>
 
@@ -204,7 +204,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ cvData, onChange }) =>
                     })
                   }
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
-                  placeholder="Semarang, Indonesia"
+                  placeholder="Jakarta, Indonesia"
                 />
               </div>
 
@@ -220,7 +220,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ cvData, onChange }) =>
                     })
                   }
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
-                  placeholder="github.com/fazledzaky"
+                  placeholder="github.com/username"
                 />
               </div>
 
@@ -236,7 +236,7 @@ export const SectionForm: React.FC<SectionFormProps> = ({ cvData, onChange }) =>
                     })
                   }
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
-                  placeholder="linkedin.com/in/fazledzaky"
+                  placeholder="linkedin.com/in/username"
                 />
               </div>
 

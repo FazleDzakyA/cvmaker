@@ -45,9 +45,20 @@ export default function BuilderPage() {
 
   // Load from local storage on mount
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cvgenie_user_cvs_v1');
+      localStorage.removeItem('cvgenie_active_cv_id_v1');
+    }
     const saved = getActiveCV();
-    if (saved) {
+    if (saved && saved.personalInfo?.fullName !== 'Fazle Dzaky Aryaguna' && saved.id !== 'cv-fazle-01') {
       setCvData(saved);
+    } else {
+      const fresh: CVData = {
+        ...blankCVData,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cv-${Date.now()}`,
+      };
+      setCvData(fresh);
+      saveActiveCV(fresh);
     }
   }, []);
 

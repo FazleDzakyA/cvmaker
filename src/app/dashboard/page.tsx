@@ -43,6 +43,7 @@ import { CVData } from '@/types/cv';
 import { getActiveCV, saveActiveCV } from '@/lib/storage';
 import { blankCVData } from '@/data/initialCVData';
 import { useAuth } from '@/context/AuthContext';
+import { AppSidebar } from '@/components/layout/AppSidebar';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -219,81 +220,12 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="misty-mountain-viewport text-[#172B49] min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 overflow-x-hidden selection:bg-blue-200">
-      {/* 1. Desktop Floating Glass Sidebar (Left) */}
-      <aside className="hidden md:flex flex-col items-center justify-between py-6 px-3 glass-sidebar w-16 shrink-0 h-[92vh] sticky top-6 z-30">
-        {/* Top App Icons */}
-        <div className="flex flex-col items-center gap-4 w-full">
-          {/* Active Dashboard Button */}
-          <Link
-            href="/dashboard"
-            className="w-11 h-11 rounded-2xl bg-[#172B49] text-white flex items-center justify-center shadow-md shadow-[#172B49]/20 hover:scale-105 transition-all"
-            title="Dashboard CVGenie"
-          >
-            <Home className="w-5 h-5" />
-          </Link>
+    <div className="misty-mountain-viewport text-[#172B49] min-h-screen p-3 sm:p-5 lg:p-6 overflow-x-hidden selection:bg-blue-200 md:pl-24">
+      {/* Unified Global Floating Glass Sidebar */}
+      <AppSidebar />
 
-          {/* CV Studio */}
-          <Link
-            href="/builder"
-            className="w-10 h-10 rounded-2xl text-[#496A96] hover:text-[#172B49] hover:bg-white/60 flex items-center justify-center transition-all"
-            title="Studio Pembuat CV"
-          >
-            <Folder className="w-5 h-5" />
-          </Link>
-
-          {/* Templates */}
-          <Link
-            href="/templates"
-            className="w-10 h-10 rounded-2xl text-[#496A96] hover:text-[#172B49] hover:bg-white/60 flex items-center justify-center transition-all"
-            title="Katalog Template CV"
-          >
-            <Star className="w-5 h-5" />
-          </Link>
-
-          {/* Student Mode */}
-          <Link
-            href="/student-mode"
-            className="w-10 h-10 rounded-2xl text-[#496A96] hover:text-[#172B49] hover:bg-white/60 flex items-center justify-center transition-all"
-            title="Student Mode (SMK / Pelajar)"
-          >
-            <GraduationCap className="w-5 h-5" />
-          </Link>
-
-          {/* ATS Checker */}
-          <Link
-            href="/ats-checker"
-            className="w-10 h-10 rounded-2xl text-[#496A96] hover:text-[#172B49] hover:bg-white/60 flex items-center justify-center transition-all"
-            title="Audit Skor ATS CV"
-          >
-            <ShieldCheck className="w-5 h-5" />
-          </Link>
-        </div>
-
-        {/* Bottom Actions */}
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Add New CV */}
-          <button
-            onClick={handleCreateNewCV}
-            className="w-10 h-10 rounded-2xl glass-inset flex items-center justify-center text-[#172B49] hover:bg-white/90 hover:scale-110 transition-all shadow-sm"
-            title="Buat CV Baru (Lembar Kosong)"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-
-          {/* Log Out */}
-          <button
-            onClick={handleSignOut}
-            className="w-10 h-10 rounded-2xl text-[#718096] hover:text-red-600 hover:bg-red-50/80 flex items-center justify-center transition-all"
-            title="Keluar (Log Out)"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </aside>
-
-      {/* 2. Main Workspace Layout */}
-      <main className="flex-1 flex flex-col md:pl-6 max-w-[1440px] mx-auto w-full min-w-0 pb-20 md:pb-6">
+      {/* Main Workspace Layout */}
+      <main className="max-w-[1440px] mx-auto w-full min-w-0 pb-20 md:pb-6">
         {/* Top Header Section */}
         <header className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           {/* Top Left: Greeting Pill & Profile */}
@@ -754,49 +686,6 @@ export default function DashboardPage() {
           </div>
         </footer>
       </main>
-
-      {/* 4. Mobile Floating Bottom Navigation Bar (Visible only on phone screens) */}
-      <nav className="md:hidden fixed bottom-3 inset-x-3 z-50 glass-card px-4 py-2.5 rounded-2xl flex items-center justify-around shadow-2xl border border-white/80">
-        <Link
-          href="/dashboard"
-          className="flex flex-col items-center gap-1 text-[#172B49]"
-          title="Dashboard"
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-[9px] font-bold">Home</span>
-        </Link>
-        <Link
-          href="/builder"
-          className="flex flex-col items-center gap-1 text-[#496A96] hover:text-[#172B49]"
-          title="Studio CV"
-        >
-          <Folder className="w-5 h-5" />
-          <span className="text-[9px] font-semibold">Studio</span>
-        </Link>
-        <button
-          onClick={handleCreateNewCV}
-          className="w-10 h-10 -mt-5 rounded-full bg-[#172B49] text-white flex items-center justify-center shadow-lg shadow-[#172B49]/30 hover:scale-105 transition-transform"
-          title="Buat CV Baru"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-        <Link
-          href="/student-mode"
-          className="flex flex-col items-center gap-1 text-[#496A96] hover:text-[#172B49]"
-          title="Student Mode"
-        >
-          <GraduationCap className="w-5 h-5" />
-          <span className="text-[9px] font-semibold">Student</span>
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="flex flex-col items-center gap-1 text-[#718096] hover:text-red-600"
-          title="Keluar"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="text-[9px] font-semibold">Logout</span>
-        </button>
-      </nav>
     </div>
   );
 }

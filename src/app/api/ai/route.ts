@@ -7,9 +7,9 @@ async function callGemini(prompt: string): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
 
   const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-3.1-pro-preview',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
 
   for (const model of candidateModels) {
@@ -40,8 +40,7 @@ async function callGemini(prompt: string): Promise<string | null> {
           return text.trim();
         }
       }
-    } catch (e) {
-      // Try next model or fallback
+    } catch {
       continue;
     }
   }
@@ -60,20 +59,22 @@ export async function POST(req: NextRequest) {
 
     switch (action) {
       case 'transform_experience': {
-        const { type, title, role, rawDescription, toolsUsed } = payload;
+        const { type, title, role, rawDescription, toolsUsed, fieldCategory } = payload;
 
-        // Try Gemini live generation first
+        // Try Gemini live generation first with Universal Major context
         if (GEMINI_API_KEY && rawDescription) {
-          const prompt = `Act as an expert ATS Resume Coach for students and vocational graduates (SMK).
-Transform the following student project or non-formal experience into 2-3 professional, punchy resume bullet points.
+          const prompt = `You are an expert, multi-disciplinary ATS Resume Coach for students and graduates across ALL vocational majors (SMK: Otomotif TKR/TBSM, Akuntansi AKL, Perkantoran MPLB, DKV Kreatif, TKJ Jaringan, Perhotelan, Tata Boga Kuliner, Farmasi, Keperawatan, Mesin, Listrik, PPLG), High School (SMA IPA/IPS), and College Undergraduates.
+Never assume software engineering or IT unless the user's project is explicitly about software.
+
+Task: Transform this student project or practical non-formal experience into 2-3 professional, punchy resume bullet points tailored specifically to its actual field of study (${fieldCategory || 'general'}).
 Rules:
-1. Preserve the original facts. Never fabricate false achievements, metrics, or technologies.
-2. Start each bullet point with strong action verbs (e.g., Developed, Engineered, Spearheaded, Coordinated, Implemented).
+1. Preserve original facts. Never fabricate false achievements or false tools.
+2. Start each bullet point with strong active verbs in Indonesian or English (matching user language).
 3. Ensure ATS scannability.
 4. Output only the bullet points, one per line starting with a hyphen.
 
-Project Title: ${title || 'Academic Project'}
-Tools/Technologies: ${toolsUsed || 'General'}
+Project Title: ${title || 'Practical Project'}
+Field / Tools: ${toolsUsed || fieldCategory || 'General'}
 User's Description: "${rawDescription}"`;
 
           const geminiResult = await callGemini(prompt);
@@ -89,8 +90,8 @@ User's Description: "${rawDescription}"`;
                 success: true,
                 source: 'gemini',
                 data: {
-                  title: title || 'Academic Project',
-                  role: role || 'Lead Developer',
+                  title: title || 'Praktikum & Proyek Sekolah',
+                  role: role || 'Penanggung Jawab Proyek',
                   highlights: lines,
                   inferredSkills: tools,
                 },
@@ -99,13 +100,14 @@ User's Description: "${rawDescription}"`;
           }
         }
 
-        // Fallback to internal transformer
+        // Fallback to internal universal transformer
         const result = transformStudentExperience({
           type: type || 'school_project',
-          title: title || 'Project',
-          role: role || 'Contributor',
+          title: title || 'Proyek Praktikum',
+          role: role || 'Penanggung Jawab',
           rawDescription: rawDescription || '',
           toolsUsed: toolsUsed || '',
+          fieldCategory: fieldCategory || '',
         });
         return NextResponse.json({ success: true, source: 'nlp_engine', data: result });
       }
@@ -114,10 +116,11 @@ User's Description: "${rawDescription}"`;
         const { role, studentLevel, skills } = payload;
 
         if (GEMINI_API_KEY && role) {
-          const prompt = `Write a professional 2-3 sentence resume summary for a ${studentLevel || 'Student / Fresh Graduate'} targeting the position of "${role}".
-Key competencies: ${(skills || []).join(', ')}.
-Tone: Confident, ambitious, articulate, and recruiter-ready.
-Do not include quotation marks or placeholder brackets.`;
+          const prompt = `Write a professional 2-3 sentence resume summary for a ${studentLevel || 'Student / Fresh Graduate'} targeting the field/position of "${role}".
+Relevant competencies: ${(skills || []).join(', ')}.
+Language: Indonesian (Bahasa Indonesia).
+Tone: Confident, ambitious, articulate, and recruiter-ready. Tailor strictly to "${role}" and do not bias toward IT/PPLG unless the role is IT.
+Do not include quotation marks.`;
 
           const geminiResult = await callGemini(prompt);
           if (geminiResult) {
@@ -130,9 +133,9 @@ Do not include quotation marks or placeholder brackets.`;
         }
 
         const summary = generateProfessionalSummary(
-          role || 'Software Developer',
-          studentLevel || 'SMK Graduate',
-          skills || ['HTML', 'CSS', 'JavaScript']
+          role || 'Kandidat Profesional',
+          studentLevel || 'Lulusan SMK',
+          skills || ['Komunikasi', 'Kerja Sama Tim', 'Ketelitian']
         );
         return NextResponse.json({ success: true, source: 'nlp_engine', data: { summary } });
       }
@@ -141,7 +144,7 @@ Do not include quotation marks or placeholder brackets.`;
         const { text, mode } = payload;
 
         if (GEMINI_API_KEY && text) {
-          const prompt = `Improve the following resume bullet point for maximum impact, ATS readability, and professional tone.
+          const prompt = `Improve the following resume bullet point for maximum impact, ATS readability, and professional tone in the candidate's industry.
 Style mode: ${mode || 'professional'}.
 Original text: "${text}"
 Output only the improved sentence starting with a strong active verb, with no quotes or explanations.`;
@@ -166,47 +169,106 @@ Output only the improved sentence starting with a strong active verb, with no qu
 
         // 1. Detect optimal template
         let templateId: 'minimalist' | 'corporate' | 'creative' | 'ats' | 'student' | 'tech' = 'student';
-        if (lowerPrompt.includes('tech') || lowerPrompt.includes('developer') || lowerPrompt.includes('coding') || lowerPrompt.includes('software')) {
+        if (lowerPrompt.includes('tech') || lowerPrompt.includes('coding') || lowerPrompt.includes('software') || lowerPrompt.includes('developer') || lowerPrompt.includes('rpl') || lowerPrompt.includes('pplg')) {
           templateId = 'tech';
-        } else if (lowerPrompt.includes('kreatif') || lowerPrompt.includes('creative') || lowerPrompt.includes('desain') || lowerPrompt.includes('design') || lowerPrompt.includes('ui/ux') || lowerPrompt.includes('dkv')) {
+        } else if (lowerPrompt.includes('kreatif') || lowerPrompt.includes('creative') || lowerPrompt.includes('desain') || lowerPrompt.includes('design') || lowerPrompt.includes('dkv') || lowerPrompt.includes('kuliner') || lowerPrompt.includes('boga')) {
           templateId = 'creative';
-        } else if (lowerPrompt.includes('ats') || lowerPrompt.includes('formal') || lowerPrompt.includes('beasiswa') || lowerPrompt.includes('classic')) {
+        } else if (lowerPrompt.includes('ats') || lowerPrompt.includes('formal') || lowerPrompt.includes('beasiswa') || lowerPrompt.includes('farmasi') || lowerPrompt.includes('medis')) {
           templateId = 'ats';
-        } else if (lowerPrompt.includes('corporate') || lowerPrompt.includes('kantor') || lowerPrompt.includes('finance') || lowerPrompt.includes('akuntansi') || lowerPrompt.includes('admin')) {
+        } else if (lowerPrompt.includes('corporate') || lowerPrompt.includes('kantor') || lowerPrompt.includes('finance') || lowerPrompt.includes('akuntansi') || lowerPrompt.includes('admin') || lowerPrompt.includes('otomotif')) {
           templateId = 'corporate';
         } else if (lowerPrompt.includes('minimal')) {
           templateId = 'minimalist';
         }
 
         // 2. Detect accent color
-        let accentColor = '#6685FF';
+        let accentColor = '#243B80';
         if (lowerPrompt.includes('hijau') || lowerPrompt.includes('green') || lowerPrompt.includes('emerald') || lowerPrompt.includes('mint')) {
           accentColor = '#10B981';
         } else if (lowerPrompt.includes('ungu') || lowerPrompt.includes('purple') || lowerPrompt.includes('violet')) {
           accentColor = '#8B5CF6';
-        } else if (lowerPrompt.includes('navy') || lowerPrompt.includes('dark blue')) {
-          accentColor = '#243B80';
+        } else if (lowerPrompt.includes('electric') || lowerPrompt.includes('biru muda') || lowerPrompt.includes('light blue')) {
+          accentColor = '#6685FF';
         } else if (lowerPrompt.includes('pink') || lowerPrompt.includes('rose')) {
           accentColor = '#EC4899';
-        } else if (lowerPrompt.includes('amber') || lowerPrompt.includes('gold') || lowerPrompt.includes('kuning')) {
+        } else if (lowerPrompt.includes('amber') || lowerPrompt.includes('gold') || lowerPrompt.includes('kuning') || lowerPrompt.includes('orange')) {
           accentColor = '#F59E0B';
         }
 
-        // 3. Detect job title / focus
-        let jobTitle = currentCV?.personalInfo?.jobTitle || 'Software Developer';
-        if (lowerPrompt.includes('ui/ux') || lowerPrompt.includes('desain')) jobTitle = 'UI/UX Designer';
-        if (lowerPrompt.includes('akuntansi') || lowerPrompt.includes('keuangan')) jobTitle = 'Finance & Accounting Specialist';
-        if (lowerPrompt.includes('admin') || lowerPrompt.includes('administrasi')) jobTitle = 'Administrative Assistant';
-        if (lowerPrompt.includes('frontend')) jobTitle = 'Frontend Engineer';
-        if (lowerPrompt.includes('fullstack') || lowerPrompt.includes('full stack')) jobTitle = 'Full-Stack Developer';
-        if (lowerPrompt.includes('network') || lowerPrompt.includes('tkj')) jobTitle = 'Network & Infrastructure Technician';
+        // 3. Detect job title / profession across ALL fields
+        let jobTitle = currentCV?.personalInfo?.jobTitle || 'Kandidat Profesional';
+
+        // Otomotif & Mesin
+        if (lowerPrompt.includes('otomotif') || lowerPrompt.includes('tkr') || lowerPrompt.includes('mobil') || lowerPrompt.includes('motor') || lowerPrompt.includes('tbsm') || lowerPrompt.includes('bengkel')) {
+          jobTitle = 'Teknisi Otomotif & Mekanik';
+          templateId = 'corporate';
+        } else if (lowerPrompt.includes('mesin') || lowerPrompt.includes('bubut') || lowerPrompt.includes('frais') || lowerPrompt.includes('las') || lowerPrompt.includes('welder')) {
+          jobTitle = 'Teknisi Permesinan & Pengelasan';
+          templateId = 'corporate';
+        } else if (lowerPrompt.includes('listrik') || lowerPrompt.includes('titl') || lowerPrompt.includes('plc') || lowerPrompt.includes('mekatronika')) {
+          jobTitle = 'Teknisi Ketenagalistrikan & Otomasi';
+          templateId = 'tech';
+        }
+        // Akuntansi & Keuangan
+        else if (lowerPrompt.includes('akuntansi') || lowerPrompt.includes('keuangan') || lowerPrompt.includes('finance') || lowerPrompt.includes('pajak') || lowerPrompt.includes('akl') || lowerPrompt.includes('kasir')) {
+          jobTitle = 'Staf Akuntansi & Keuangan (Finance)';
+          templateId = 'corporate';
+        }
+        // Perkantoran & Administrasi
+        else if (lowerPrompt.includes('admin') || lowerPrompt.includes('perkantoran') || lowerPrompt.includes('mplb') || lowerPrompt.includes('sekretaris') || lowerPrompt.includes('arsip')) {
+          jobTitle = 'Staf Administrasi Perkantoran';
+          templateId = 'corporate';
+        }
+        // Pemasaran & Bisnis Digital
+        else if (lowerPrompt.includes('pemasaran') || lowerPrompt.includes('marketing') || lowerPrompt.includes('penjualan') || lowerPrompt.includes('sales') || lowerPrompt.includes('bdp') || lowerPrompt.includes('bisnis digital')) {
+          jobTitle = 'Spesialis Pemasaran & Bisnis Digital';
+          templateId = 'creative';
+        }
+        // DKV & Seni Kreatif
+        else if (lowerPrompt.includes('dkv') || lowerPrompt.includes('desain') || lowerPrompt.includes('design') || lowerPrompt.includes('grafis') || lowerPrompt.includes('video') || lowerPrompt.includes('multimedia')) {
+          jobTitle = 'Desainer Grafis & Media Kreatif (DKV)';
+          templateId = 'creative';
+        }
+        // TKJ & Infrastruktur Jaringan
+        else if (lowerPrompt.includes('tkj') || lowerPrompt.includes('jaringan') || lowerPrompt.includes('network') || lowerPrompt.includes('mikrotik') || lowerPrompt.includes('cisco')) {
+          jobTitle = 'Teknisi Komputer & Jaringan (TKJ)';
+          templateId = 'tech';
+        }
+        // Kuliner & Tata Boga
+        else if (lowerPrompt.includes('boga') || lowerPrompt.includes('kuliner') || lowerPrompt.includes('chef') || lowerPrompt.includes('cook') || lowerPrompt.includes('masak') || lowerPrompt.includes('pastry')) {
+          jobTitle = 'Cook Helper & Spesialis Kuliner (Tata Boga)';
+          templateId = 'creative';
+        }
+        // Perhotelan & Hospitality
+        else if (lowerPrompt.includes('hotel') || lowerPrompt.includes('hospitality') || lowerPrompt.includes('front office') || lowerPrompt.includes('pariwisata')) {
+          jobTitle = 'Staf Perhotelan & Front Office';
+          templateId = 'corporate';
+        }
+        // Farmasi & Kesehatan
+        else if (lowerPrompt.includes('farmasi') || lowerPrompt.includes('obat') || lowerPrompt.includes('apotek')) {
+          jobTitle = 'Asisten Tenaga Kefarmasian';
+          templateId = 'ats';
+        } else if (lowerPrompt.includes('perawat') || lowerPrompt.includes('kesehatan') || lowerPrompt.includes('medis')) {
+          jobTitle = 'Asisten Perawat & Layanan Kesehatan';
+          templateId = 'ats';
+        }
+        // PPLG / Software Developer
+        else if (lowerPrompt.includes('web') || lowerPrompt.includes('frontend') || lowerPrompt.includes('backend') || lowerPrompt.includes('fullstack') || lowerPrompt.includes('developer') || lowerPrompt.includes('software') || lowerPrompt.includes('rpl') || lowerPrompt.includes('pplg')) {
+          jobTitle = 'Junior Software & Web Developer';
+          templateId = 'tech';
+        }
+        // SMA / Beasiswa
+        else if (lowerPrompt.includes('sma') || lowerPrompt.includes('beasiswa') || lowerPrompt.includes('universitas') || lowerPrompt.includes('akademik') || lowerPrompt.includes('kampus')) {
+          jobTitle = 'Kandidat Akademik & Beasiswa';
+          templateId = 'ats';
+        }
 
         // 4. Generate AI summary
-        let summary = `Driven and ambitious ${jobTitle} prepared with hands-on vocational capabilities, practical project delivery, and rapid adaptation to modern workflow standards. Eager to contribute foundational skills and problem-solving enthusiasm to professional internship and entry-level positions.`;
+        let summary = `Kandidat berdedikasi tinggi dengan keahlian praktis teruji di bidang ${jobTitle}. Memiliki fondasi pengetahuan mendalam melalui pembelajaran terstruktur, praktikum kejuruan, dan penerapan Standard Operating Procedure (SOP). Siap memberikan kontribusi produktif dan antusiasme belajar tinggi pada program magang maupun posisi entry-level.`;
 
         if (GEMINI_API_KEY && userPrompt) {
           const aiSummary = await callGemini(
-            `Write a 2-3 sentence impactful resume summary for a student/fresh graduate based on this request: "${userPrompt}". Keep it professional, confident, and ATS-optimized.`
+            `Tulis ringkasan profil resume profesional (2-3 kalimat) dalam Bahasa Indonesia untuk kandidat/pelajar di bidang "${jobTitle}" berdasarkan permintaan: "${userPrompt}". Pastikan nada percaya diri, ringkas, dan ATS-friendly. Jangan menyertakan tanda petik.`
           );
           if (aiSummary) summary = aiSummary.replace(/^["']|["']$/g, '').trim();
         }
@@ -214,7 +276,7 @@ Output only the improved sentence starting with a strong active verb, with no qu
         // 5. Build customized CV object
         const customCV = {
           ...currentCV,
-          title: `AI Generated CV - ${jobTitle}`,
+          title: `CV ${jobTitle}`,
           templateId,
           accentColor,
           personalInfo: {
@@ -227,35 +289,6 @@ Output only the improved sentence starting with a strong active verb, with no qu
         return NextResponse.json({
           success: true,
           data: customCV,
-        });
-      }
-
-      case 'generate_from_prompt': {
-        const { prompt } = payload;
-        const lowerPrompt = (prompt || '').toLowerCase();
-
-        let detectedRole = 'Software Developer';
-        if (lowerPrompt.includes('design') || lowerPrompt.includes('ui/ux')) detectedRole = 'UI/UX Designer';
-        if (lowerPrompt.includes('account') || lowerPrompt.includes('keuangan')) detectedRole = 'Accounting Staff';
-        if (lowerPrompt.includes('admin') || lowerPrompt.includes('office')) detectedRole = 'Administrative Assistant';
-        if (lowerPrompt.includes('network') || lowerPrompt.includes('tkj')) detectedRole = 'Network Technician';
-
-        const summary = `Dedicated and energetic candidate preparing for roles as ${detectedRole}. Possesses strong technical foundations and practical capabilities demonstrated through academic assignments and extracurricular leadership. Ready to bring high enthusiasm and fast learning ability to internship and entry-level positions.`;
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            detectedRole,
-            summary,
-            skills: ['Problem Solving', 'Team Collaboration', 'Communication', 'Attention to Detail'],
-            projectSample: {
-              title: `${detectedRole} Capstone Project`,
-              highlights: [
-                'Executed end-to-end practical project deliverables according to academic rubrics.',
-                'Organized workflow schedules and presented findings clearly to peers and instructors.',
-              ],
-            },
-          },
         });
       }
 

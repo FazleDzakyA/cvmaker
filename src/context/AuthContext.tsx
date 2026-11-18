@@ -322,14 +322,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return getStoredCVs();
       }
 
-      const dbCVs: CVData[] = data.map((item: any) => ({
-        ...item.content,
-        id: item.id,
-        title: item.title,
-        templateId: item.template_id,
-        accentColor: item.accent_color,
-        updatedAt: new Date(item.updated_at).toLocaleDateString(),
-      }));
+      const dbCVs: CVData[] = data
+        .map((item: any) => ({
+          ...item.content,
+          id: item.id,
+          title: item.title,
+          templateId: item.template_id,
+          accentColor: item.accent_color,
+          updatedAt: new Date(item.updated_at).toLocaleDateString(),
+        }))
+        .filter(
+          (c: CVData) =>
+            c.personalInfo?.fullName !== 'Fazle Dzaky Aryaguna' && c.id !== 'cv-fazle-01'
+        );
 
       return dbCVs;
     } catch {

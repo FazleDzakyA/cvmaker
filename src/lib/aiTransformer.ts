@@ -4,6 +4,7 @@ export interface StudentExperienceInput {
   role?: string;
   rawDescription: string;
   toolsUsed?: string;
+  fieldCategory?: string; // e.g. 'otomotif', 'akuntansi', 'dkv', 'tkj', 'perkantoran', 'kuliner', 'kesehatan', 'pplg', 'sma', 'general'
 }
 
 export interface TransformedResult {
@@ -16,66 +17,116 @@ export interface TransformedResult {
 export function transformStudentExperience(input: StudentExperienceInput): TransformedResult {
   const text = input.rawDescription.trim();
   const tools = input.toolsUsed ? input.toolsUsed.split(',').map((s) => s.trim()) : [];
-  const lowerText = text.toLowerCase();
+  const lowerText = text.toLowerCase() + ' ' + (input.title || '').toLowerCase() + ' ' + (input.toolsUsed || '').toLowerCase();
 
   const highlights: string[] = [];
   const inferredSkills: string[] = [...tools];
 
   if (input.type === 'school_project') {
-    // Web / App
-    if (lowerText.includes('web') || lowerText.includes('website') || lowerText.includes('html') || lowerText.includes('react') || lowerText.includes('php')) {
-      const techList = tools.length > 0 ? tools.join(', ') : 'modern web technologies (HTML, CSS, JavaScript)';
-      highlights.push(`Engineered a responsive web application utilizing ${techList}.`);
-      highlights.push('Implemented modular component layouts and validated input forms for enhanced user accessibility.');
-      highlights.push('Applied clean code principles and version control throughout the project lifecycle.');
-      inferredSkills.push('Web Development', 'Responsive Design', 'Frontend Architecture');
-    } else if (lowerText.includes('game') || lowerText.includes('unity') || lowerText.includes('godot')) {
-      highlights.push(`Developed 2D/3D gameplay mechanics and user interaction flows using ${tools.length > 0 ? tools.join(', ') : 'game engine tools'}.`);
-      highlights.push('Implemented player physics, asset animations, and collision detection systems.');
-      highlights.push('Conducted iterative playtesting and bug resolution to ensure smooth 60 FPS performance.');
-      inferredSkills.push('Game Design', 'Logic Scripting', 'Asset Optimization');
-    } else if (lowerText.includes('database') || lowerText.includes('sql') || lowerText.includes('crud')) {
-      highlights.push(`Designed relational database schemas with normalized tables in ${tools.length > 0 ? tools.join(', ') : 'SQL'}.`);
-      highlights.push('Constructed reliable CRUD backend endpoints facilitating secure data storage and querying.');
-      highlights.push('Executed performance indexing reducing repetitive database query bottlenecks.');
-      inferredSkills.push('Database Management', 'SQL Schema Design', 'Data Normalization');
-    } else {
-      highlights.push(`Developed ${input.title || 'practical academic project'} adhering to designated course specifications.`);
-      highlights.push(`Utilized ${tools.length > 0 ? tools.join(', ') : 'core discipline frameworks'} to construct functional project deliverables.`);
-      highlights.push('Collaborated with teammates and presented functional project demonstrations to academic instructors.');
-      inferredSkills.push('Project Planning', 'Technical Execution', 'Documentation');
+    // 1. Akuntansi & Keuangan (AKL)
+    if (lowerText.includes('akuntansi') || lowerText.includes('keuangan') || lowerText.includes('jurnal') || lowerText.includes('laporan keuangan') || lowerText.includes('neraca') || lowerText.includes('accurate') || lowerText.includes('myob') || lowerText.includes('pajak')) {
+      const toolStr = tools.length > 0 ? tools.join(', ') : 'software akuntansi (Accurate / MYOB) & Microsoft Excel';
+      highlights.push(`Menyusun dan merekonsiliasi laporan keuangan berkala dengan tingkat akurasi tinggi menggunakan ${toolStr}.`);
+      highlights.push('Mencatat transaksi jurnal umum, buku besar, hingga neraca saldo sesuai Standar Akuntansi Keuangan (SAK).');
+      highlights.push('Menganalisis arus kas serta menyajikan ringkasan keuangan yang rapi untuk evaluasi pembimbing/manajemen.');
+      inferredSkills.push('Penyusunan Laporan Keuangan', 'Rekonsiliasi Bank', 'Analisis Arus Kas', 'Ketelitian Data Numerik');
+    }
+    // 2. Administrasi Perkantoran & Manajemen (MPLB)
+    else if (lowerText.includes('perkantoran') || lowerText.includes('arsip') || lowerText.includes('surat') || lowerText.includes('korespondensi') || lowerText.includes('administrasi') || lowerText.includes('notulen') || lowerText.includes('tata kelola')) {
+      highlights.push(`Mengelola tata kelola administrasi dokumen dan sistem kearsipan digital untuk kemudahan temu balik data.`);
+      highlights.push('Menyusun korespondensi surat niaga/dinas resmi serta menyiapkan agenda pertemuan dan notulensi rapat presisi.');
+      highlights.push('Memberikan pelayanan komunikasi prima (service excellence) kepada tamu dan pihak eksternal.');
+      inferredSkills.push('Kearsipan Digital', 'Korespondensi Bisnis', 'Manajemen Agenda & Notulensi', 'Komunikasi Pelayanan');
+    }
+    // 3. Teknik Otomotif & Sepeda Motor (TKR / TBSM)
+    else if (lowerText.includes('otomotif') || lowerText.includes('motor') || lowerText.includes('mobil') || lowerText.includes('tune up') || lowerText.includes('injeksi') || lowerText.includes('overhaul') || lowerText.includes('mesin') || lowerText.includes('servis')) {
+      highlights.push(`Melaksanakan perawatan berkala (tune-up) dan pemeliharaan sistem mesin kendaraan sesuai standar operasional K3.`);
+      highlights.push('Menggunakan peralatan diagnostik (scanner tool) dan alat ukur presisi untuk mendeteksi gangguan sistem kelistrikan & bahan bakar.');
+      highlights.push('Membongkar, memeriksa komponen, dan merakit kembali sistem transmisi serta pengereman dengan standar keamanan pabrikan.');
+      inferredSkills.push('Diagnosa Sistem Kendaraan', 'Pemeliharaan Mesin & Tune-Up', 'Standar Keselamatan K3', 'Penggunaan Tool Presisi');
+    }
+    // 4. Desain Komunikasi Visual & Media Kreatif (DKV / Multimedia / Animasi)
+    else if (lowerText.includes('dkv') || lowerText.includes('desain') || lowerText.includes('design') || lowerText.includes('poster') || lowerText.includes('branding') || lowerText.includes('video') || lowerText.includes('photoshop') || lowerText.includes('figma') || lowerText.includes('illustrator')) {
+      const designTools = tools.length > 0 ? tools.join(', ') : 'Adobe Creative Suite & Figma';
+      highlights.push(`Merancang aset visual dan identitas merek (branding) kreatif menggunakan ${designTools}.`);
+      highlights.push('Menerapkan prinsip komposisi visual, hierarki tipografi, dan keharmonisan warna untuk media digital maupun cetak.');
+      highlights.push('Bekerja sama dalam tim kreatif memproduksi konten visual yang meningkatkan daya tarik promosi produk.');
+      inferredSkills.push('Desain Grafis Komersial', 'Tipografi & Layout', 'Branding & Identitas Visual', 'Produksi Konten Media');
+    }
+    // 5. Teknik Komputer & Jaringan (TKJ / Sistem Jaringan)
+    else if (lowerText.includes('tkj') || lowerText.includes('jaringan') || lowerText.includes('mikrotik') || lowerText.includes('cisco') || lowerText.includes('router') || lowerText.includes('lan') || lowerText.includes('ip address') || lowerText.includes('server')) {
+      highlights.push(`Mengonfigurasi perangkat jaringan (Router Mikrotik / Switch) dan manajemen bandwidth untuk kestabilan koneksi.`);
+      highlights.push('Melakukan instalasi pengkabelan terstruktur (crimping UTP) serta setup topologi jaringan LAN/WLAN.');
+      highlights.push('Melakukan troubleshooting kendala konektivitas dan pemeliharaan sistem keamanan jaringan.');
+      inferredSkills.push('Konfigurasi Jaringan (Mikrotik/Cisco)', 'Instalasi LAN & WLAN', 'Troubleshooting Jaringan', 'Manajemen IP & Server');
+    }
+    // 6. Pariwisata, Perhotelan & Kuliner (Tata Boga / Perhotelan)
+    else if (lowerText.includes('hotel') || lowerText.includes('boga') || lowerText.includes('kuliner') || lowerText.includes('masak') || lowerText.includes('tamu') || lowerText.includes('resep') || lowerText.includes('pastry') || lowerText.includes('front office')) {
+      highlights.push(`Menerapkan standar sanitasi dan keamanan pangan ketat (HACCP) dalam persiapan serta pengolahan bahan makanan.`);
+      highlights.push('Menyajikan hidangan berkualitas dengan teknik pemotongan dan plating estetis berstandar profesional.');
+      highlights.push('Memberikan pelayanan ramah tamah (hospitality) prima untuk menjamin kepuasan pelanggan/tamu.');
+      inferredSkills.push('Food Safety & Sanitasi', 'Pengolahan Makanan Standar', 'Hospitality Service', 'Manajemen Bahan Baku');
+    }
+    // 7. Kesehatan & Farmasi
+    else if (lowerText.includes('farmasi') || lowerText.includes('obat') || lowerText.includes('resep') || lowerText.includes('perawat') || lowerText.includes('medis') || lowerText.includes('klinik') || lowerText.includes('pasien')) {
+      highlights.push(`Melayani peracikan sediaan obat (serbuk, salep, kapsul) sesuai kaidah resep dokter dan standar farmakope.`);
+      highlights.push('Melakukan pencatatan administrasi stok obat dan masa kedaluwarsa dengan sistem FIFO/FEFO.');
+      highlights.push('Menyampaikan informasi penggunaan obat (aturan pakai, dosis, penyimpanan) secara komunikatif dan jelas.');
+      inferredSkills.push('Peracikan Sediaan Obat', 'Manajemen Stok FIFO/FEFO', 'Pelayanan Informasi Obat (PIO)', 'Standar Higienitas Medis');
+    }
+    // 8. Bisnis Digital & Pemasaran
+    else if (lowerText.includes('pemasaran') || lowerText.includes('marketing') || lowerText.includes('jual') || lowerText.includes('promosi') || lowerText.includes('marketplace') || lowerText.includes('iklan')) {
+      highlights.push(`Merancang strategi pemasaran digital dan kampanye promosi di berbagai channel media sosial dan marketplace.`);
+      highlights.push('Menganalisis tren pasar serta menyusun penawaran produk yang relevan untuk target pelanggan.');
+      highlights.push('Mengelola negosiasi penjualan dan hubungan pelanggan (CRM) untuk meningkatkan loyalitas konsumen.');
+      inferredSkills.push('Digital Marketing', 'Pengelolaan E-Commerce', 'Komunikasi Negosiasi', 'Analisis Perilaku Konsumen');
+    }
+    // 9. Rekayasa Perangkat Lunak / Web / Mobile (PPLG / RPL)
+    else if (lowerText.includes('web') || lowerText.includes('aplikasi') || lowerText.includes('coding') || lowerText.includes('program') || lowerText.includes('html') || lowerText.includes('react') || lowerText.includes('laravel')) {
+      const techList = tools.length > 0 ? tools.join(', ') : 'bahasa pemrograman dan framework modern';
+      highlights.push(`Mengembangkan aplikasi fungsional yang responsif dan user-friendly menggunakan ${techList}.`);
+      highlights.push('Mengimplementasikan arsitektur kode terstruktur, integrasi database, dan validasi form data.');
+      highlights.push('Melakukan pengujian fitur (testing) serta pengelolaan repositori versi kerja secara terorganisir.');
+      inferredSkills.push('Pengembangan Perangkat Lunak', 'Arsitektur Data', 'Pengujian Fitur & Debugging');
+    }
+    // 10. Siswa SMA / Umum (KIR, Sains, Humaniora, Proyek Sekolah)
+    else {
+      highlights.push(`Merencanakan dan mengeksekusi proyek ${input.title || 'akademik praktikum'} sesuai target dan tenggat waktu yang ditetapkan.`);
+      highlights.push(`Mengaplikasikan metodologi analitis dan penggunaan ${tools.length > 0 ? tools.join(', ') : 'peralatan pendukung'} untuk menghasilkan solusi terukur.`);
+      highlights.push('Menyusun dokumentasi laporan komprehensif serta mempresentasikan temuan di hadapan pembimbing dan audiens.');
+      inferredSkills.push('Manajemen Proyek', 'Penulisan Laporan Teknis', 'Presentasi & Komunikasi', 'Problem Solving');
     }
   } else if (input.type === 'organization' || input.type === 'extracurricular') {
-    if (lowerText.includes('osis') || lowerText.includes('bem') || lowerText.includes('mpk') || lowerText.includes('ketua') || lowerText.includes('head')) {
-      highlights.push(`Coordinated committee initiatives and represented student interests across cross-functional programs.`);
-      highlights.push('Facilitated structured weekly agendas and aligned member tasks to deliver successful school events.');
-      highlights.push('Managed communication channels between student bodies, faculty advisors, and external sponsors.');
-      inferredSkills.push('Leadership', 'Event Planning', 'Public Communication', 'Conflict Resolution');
+    if (lowerText.includes('osis') || lowerText.includes('bem') || lowerText.includes('mpk') || lowerText.includes('ketua') || lowerText.includes('koordinator')) {
+      highlights.push(`Mengoordinasikan divisi kepanitiaan dan menyelaraskan jadwal kerja seluruh anggota demi kelancaran program kerja.`);
+      highlights.push('Memimpin rapat koordinasi rutin serta memfasilitasi komunikasi efektif antara siswa, dewan guru, dan pihak luar.');
+      highlights.push('Mengelola manajemen risiko dan pemecahan masalah secara adaptif saat pelaksanaan kegiatan berskala besar.');
+      inferredSkills.push('Kepemimpinan (Leadership)', 'Manajemen Acara & Tim', 'Komunikasi Publik', 'Penyelesaian Masalah');
     } else {
-      highlights.push(`Active contributor to ${input.title || 'student organization'} activities and scheduled community events.`);
-      highlights.push('Assisted in organizing operational logistics and documentation for extracurricular programs.');
-      highlights.push('Fostered collaborative team spirit and contributed ideas during strategy planning sessions.');
-      inferredSkills.push('Teamwork', 'Operational Logistics', 'Time Management');
+      highlights.push(`Aktif berkontribusi dalam perencanaan dan pelaksanaan program kerja ${input.title || 'organisasi / ekstrakurikuler'}.`);
+      highlights.push('Membantu operasional logistik, dokumentasi kegiatan, dan penyusunan laporan pertanggungjawaban.');
+      highlights.push('Menunjukkan komitmen tinggi, kerja sama tim, dan inisiatif solutif di setiap agenda kegiatan.');
+      inferredSkills.push('Kerja Sama Tim', 'Manajemen Waktu', 'Operasional & Logistik');
     }
   } else if (input.type === 'competition') {
-    highlights.push(`Represented institution in ${input.title || 'technical competition'} under rigorous time constraints.`);
-    highlights.push('Synthesized creative problem-solving techniques to produce deliverable competition solutions.');
-    highlights.push('Demonstrated technical agility and resilience under evaluation by industry adjudicators.');
-    inferredSkills.push('Competitive Drive', 'Problem Solving Under Pressure', 'Rapid Prototyping');
+    highlights.push(`Mewakili institusi dalam kompetisi ${input.title || 'bidang kejuruan/akademik'} dengan persiapan teknis intensif.`);
+    highlights.push('Mendemonstrasikan pemikiran kritis, ketahanan mental, dan presisi kerja di bawah batas waktu ketat.');
+    highlights.push('Mendapatkan apresiasi atas kreativitas pemecahan masalah dari tim dewan juri ahli.');
+    inferredSkills.push('Ketahanan Kerja di Bawah Tekanan', 'Pemikiran Kritis & Analitis', 'Presisi & Daya Saing');
   } else {
-    // Default internship or volunteer
-    highlights.push(`Executed daily tasks with precision and adhered strictly to professional operational guidelines.`);
-    highlights.push('Collaborated with cross-functional team members to support ongoing organizational goals.');
-    highlights.push('Proactively identified opportunities to streamline documentation and routine workflows.');
-    inferredSkills.push('Professional Communication', 'Workplace Adaptability', 'Detail Oriented');
+    // Internship / Prakerin / Magang / Volunteer
+    highlights.push(`Menjalankan tugas harian dengan disiplin tinggi sesuai Standard Operating Procedure (SOP) tempat magang.`);
+    highlights.push('Beradaptasi cepat dengan budaya kerja tim profesional dan aktif mempelajari instrumen operasional baru.');
+    highlights.push('Memberikan kontribusi nyata dalam penyelesaian beban kerja harian secara teliti dan tepat waktu.');
+    inferredSkills.push('Disiplin & Etos Kerja', 'Adaptasi Cepat', 'Ketelitian Operasional', 'Komunikasi Profesional');
   }
 
   // Deduplicate skills
   const cleanSkills = Array.from(new Set(inferredSkills.filter(Boolean)));
 
   return {
-    title: input.title || 'Academic Project',
-    role: input.role || (input.type === 'school_project' ? 'Project Creator' : 'Active Member'),
+    title: input.title || 'Proyek Praktikum / Kegiatan',
+    role: input.role || (input.type === 'school_project' ? 'Penanggung Jawab Proyek' : 'Anggota Aktif'),
     highlights,
     inferredSkills: cleanSkills,
   };
@@ -83,36 +134,21 @@ export function transformStudentExperience(input: StudentExperienceInput): Trans
 
 export function generateProfessionalSummary(role: string, studentLevel: string, skills: string[]): string {
   const skillsStr = skills.slice(0, 4).join(', ');
-  if (studentLevel.toLowerCase().includes('smk') || studentLevel.toLowerCase().includes('vocational')) {
-    return `Motivated and detail-oriented Vocational High School (SMK) graduate specializing in ${role}. Possesses practical hands-on experience in ${skillsStr || 'technical development'}, built through structured school projects and collaborative student initiatives. Eager to contribute foundational skills and continuous curiosity to an internship or entry-level team.`;
+  if (studentLevel.toLowerCase().includes('smk') || studentLevel.toLowerCase().includes('kejuruan')) {
+    return `Lulusan SMK yang berdedikasi dan memiliki keterampilan praktis teruji di bidang ${role}. Terbiasa menerapkan prosedur standar operasional (SOP), ketelitian kerja, dan pemecahan masalah melalui proyek praktikum sekolah. Menguasai ${skillsStr || 'kompetensi kejuruan inti'} dan siap memberikan kontribusi produktif bagi perusahaan.`;
   }
-  return `Energetic and driven ${studentLevel || 'University Student'} pursuing opportunities in ${role}. Equipped with proven competencies in ${skillsStr || 'modern technologies'} demonstrated through practical coursework, student organization leadership, and project execution. Committed to delivering high-quality contributions while rapidly acquiring industry best practices.`;
+  if (studentLevel.toLowerCase().includes('sma')) {
+    return `Siswa SMA yang berprestasi, analitis, dan memiliki motivasi belajar tinggi dengan minat kuat di bidang ${role}. Berpengalaman dalam organisasi kesiswaan dan proyek penelitian akademik. Didukung kompetensi dalam ${skillsStr || 'komunikasi dan analisis'}, siap mengembangkan karir profesional dan magang.`;
+  }
+  return `Individu yang proaktif dan berorientasi pada hasil dengan fokus kompetensi di bidang ${role}. Memiliki fondasi kuat dalam ${skillsStr || 'keahlian bidang'}, kemampuan adaptasi cepat, serta kolaborasi tim yang solid. Bertekad memberikan kontribusi terbaik pada posisi entry-level maupun program magang.`;
 }
 
 export function rewriteBulletPoint(bullet: string, style: 'professional' | 'grammar' | 'ats' | 'concise'): string {
   const trimmed = bullet.trim();
   if (!trimmed) return bullet;
 
-  // Capitalize and ensure it ends with period
   let result = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
   if (!result.endsWith('.')) result += '.';
-
-  // Ensure starts with active verb
-  const firstWord = result.split(' ')[0].toLowerCase();
-  const verbMap: Record<string, string> = {
-    'i': 'Successfully spearheaded',
-    'made': 'Engineered and developed',
-    'helped': 'Collaborated with team members to execute',
-    'did': 'Executed and delivered',
-    'worked': 'Contributed to cross-functional initiatives involving',
-    'built': 'Architected and implemented',
-    'learned': 'Mastered and applied core principles of',
-  };
-
-  if (verbMap[firstWord]) {
-    const rest = result.substring(firstWord.length).trim();
-    result = `${verbMap[firstWord]} ${rest}`;
-  }
 
   return result;
 }

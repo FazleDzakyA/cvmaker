@@ -10,6 +10,7 @@ import { CVRenderer } from '@/components/templates/CVRenderer';
 import { LayoutTemplate, Sparkles, ArrowRight, Check, Eye, X, GraduationCap } from 'lucide-react';
 import { saveActiveCV, getActiveCV } from '@/lib/storage';
 import { useRouter } from 'next/navigation';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -30,8 +31,9 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="min-h-screen cvgenie-ambient-bg flex flex-col justify-between">
-      <Navbar />
+    <AuthGuard>
+      <div className="misty-mountain-viewport min-h-screen flex flex-col justify-between selection:bg-blue-200">
+        <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         {/* Header */}
@@ -187,5 +189,6 @@ export default function TemplatesPage() {
 
       <Footer />
     </div>
+    </AuthGuard>
   );
 }

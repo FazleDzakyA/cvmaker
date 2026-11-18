@@ -9,6 +9,7 @@ import { getActiveCV } from '@/lib/storage';
 import { analyzeCVWithATS } from '@/lib/atsScorer';
 import { defaultCVData } from '@/data/initialCVData';
 import { ATSAnalysisReport } from '@/types/cv';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 export default function ATSCheckerPage() {
   const [report, setReport] = useState<ATSAnalysisReport | null>(null);
@@ -22,8 +23,9 @@ export default function ATSCheckerPage() {
   if (!report) return null;
 
   return (
-    <div className="min-h-screen cvgenie-ambient-bg flex flex-col justify-between">
-      <Navbar />
+    <AuthGuard>
+      <div className="misty-mountain-viewport min-h-screen flex flex-col justify-between selection:bg-blue-200">
+        <Navbar />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         {/* Header */}
@@ -152,5 +154,6 @@ export default function ATSCheckerPage() {
 
       <Footer />
     </div>
+    </AuthGuard>
   );
 }

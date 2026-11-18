@@ -3,17 +3,23 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Mail, Lock, User, GraduationCap, AlertCircle, Database } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, ArrowRight, AlertCircle, Database, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUp, isConfigured } = useAuth();
+  const { user, isLoading: authLoading, signUp, isConfigured } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,43 +31,40 @@ export default function RegisterPage() {
     if (res.success) {
       router.push('/dashboard');
     } else {
-      setErrorMsg(res.error || 'Registration failed. Please check your data.');
+      setErrorMsg(res.error || 'Pendaftaran gagal. Periksa kembali data Anda.');
     }
   };
 
   return (
-    <div className="min-h-screen cvgenie-ambient-bg flex items-center justify-center p-4">
-      {/* Background ambient orbs */}
-      <div className="absolute top-10 left-10 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl glass-card border border-white/90 shadow-2xl overflow-hidden bg-white/85 relative z-10 backdrop-blur-2xl">
+    <div className="misty-mountain-viewport min-h-screen flex items-center justify-center p-4 selection:bg-blue-200">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl glass-card overflow-hidden shadow-2xl relative z-10 border border-white/80">
         {/* Left Side: Form */}
-        <div className="p-8 sm:p-10 flex flex-col justify-between">
+        <div className="p-8 sm:p-10 flex flex-col justify-between bg-white/40">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-8 group">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5" />
+            {/* Brand */}
+            <div className="flex items-center gap-2 mb-8 group">
+              <div className="w-9 h-9 rounded-2xl bg-[#172B49] flex items-center justify-center text-white shadow-md shadow-[#172B49]/20">
+                <Sparkles className="w-5 h-5 text-blue-300" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-[#101A3C]">
+              <span className="text-xl font-bold tracking-tight text-[#172B49]">
                 CV<span className="text-blue-600">Genie</span>
               </span>
-            </Link>
+            </div>
 
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Create Account 🚀</h1>
-            <p className="text-xs text-slate-500 mb-6">
-              Start building your professional ATS-friendly CV for free.
+            <h1 className="text-2xl font-bold text-[#172B49] mb-1">Buat Akun Baru 🚀</h1>
+            <p className="text-xs text-[#718096] mb-6">
+              Daftar gratis untuk mulai membuat CV ATS profesional impianmu.
             </p>
 
             {isConfigured && (
-              <div className="mb-4 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Supabase Real Database Connected</span>
+              <div className="mb-4 px-3 py-1.5 rounded-xl glass-inset text-[11px] text-[#172B49] flex items-center gap-1.5 font-medium">
+                <Database className="w-3.5 h-3.5 text-blue-600" />
+                <span>Supabase Real Database Terhubung</span>
               </div>
             )}
 
             {errorMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2 animate-in fade-in">
+              <div className="mb-4 p-3 rounded-xl bg-red-50/80 border border-red-200 text-xs text-red-700 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -69,46 +72,46 @@ export default function RegisterPage() {
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-[#172B49] mb-1">Nama Lengkap</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <User className="w-4 h-4 text-[#718096] absolute left-3.5 top-3" />
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="Your Full Name"
+                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl glass-inset bg-white/70 text-[#172B49] placeholder:text-[#718096] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20"
+                    placeholder="Nama Lengkap Anda"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-xs font-semibold text-[#172B49] mb-1">Alamat Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Mail className="w-4 h-4 text-[#718096] absolute left-3.5 top-3" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="student@school.ac.id"
+                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl glass-inset bg-white/70 text-[#172B49] placeholder:text-[#718096] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20"
+                    placeholder="nama@email.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                <label className="block text-xs font-semibold text-[#172B49] mb-1">Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Lock className="w-4 h-4 text-[#718096] absolute left-3.5 top-3" />
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="••••••••"
+                    className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl glass-inset bg-white/70 text-[#172B49] placeholder:text-[#718096] focus:outline-none focus:ring-2 focus:ring-[#172B49]/20"
+                    placeholder="Minimal 6 karakter"
                   />
                 </div>
               </div>
@@ -116,41 +119,53 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+                className="w-full py-3 rounded-2xl bg-[#172B49] hover:bg-[#243B80] text-white text-xs font-bold shadow-lg shadow-[#172B49]/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
               >
-                <span>{isLoading ? 'Creating Account...' : 'Start Creating Free →'}</span>
+                <span>{isLoading ? 'Mendaftarkan Akun...' : 'Daftar Sekarang'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </form>
           </div>
 
-          <div className="text-center mt-6 text-xs text-slate-500">
-            Already have an account?{' '}
-            <Link href="/login" className="font-bold text-blue-600 hover:underline">
-              Sign In
+          <div className="mt-8 text-center text-xs text-[#718096]">
+            Sudah punya akun?{' '}
+            <Link href="/login" className="font-bold text-[#172B49] hover:underline">
+              Masuk di sini
             </Link>
           </div>
         </div>
 
-        {/* Right Side: Decorative Visual */}
-        <div className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-[#101A3C] via-[#1B2A5E] to-[#243B80] text-white relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Right Side: Visual Glass Graphic */}
+        <div className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-[#172B49] to-[#243B80] text-white relative overflow-hidden">
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-blue-500/20 rounded-full blur-2xl" />
 
-          <div className="my-auto text-center space-y-4">
-            <div className="w-24 h-24 mx-auto rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white shadow-2xl">
-              <GraduationCap className="w-12 h-12 text-blue-300" />
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-semibold text-blue-200 mb-6 border border-white/20">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Free Student CV Studio</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Turn Potential <br />
-              Into Opportunities
+            <h2 className="text-2xl font-extrabold leading-tight mb-3">
+              Kembangkan Potensi Terbaikmu Bersama CVGenie.
             </h2>
-            <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-              Join thousands of vocational high school and university students building recruiter-ready resumes with CVGenie.
+            <p className="text-xs text-white/80 leading-relaxed">
+              Jadikan tugas sekolah, PKL, dan kepanitiaan organisasi menjadi senjata ampuh melamar kerja impian.
             </p>
           </div>
 
-          <div className="text-center text-[11px] text-slate-400">
-            Free forever for students • No credit card required
+          <div className="relative z-10 space-y-3 pt-6">
+            {[
+              'Tanpa biaya tersembunyi — 100% gratis untuk pelajar & mahasiswa.',
+              'Data tersimpan aman di cloud PostgreSQL Supabase.',
+              'Kecerdasan buatan Gemini AI siap memoles kata-kata CV kamu.',
+            ].map((feat, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-xs text-white/90">
+                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <Check className="w-2.5 h-2.5" />
+                </div>
+                <span>{feat}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

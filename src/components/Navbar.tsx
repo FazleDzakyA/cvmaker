@@ -51,10 +51,10 @@ export const Navbar: React.FC = () => {
                 href={link.href}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
+                    ? 'bg-[#172B49] text-white shadow-sm'
                     : link.highlight
-                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                    : 'text-slate-700 hover:text-blue-600 hover:bg-white/60'
+                    ? 'bg-blue-100/70 text-[#172B49] hover:bg-white'
+                    : 'text-[#496A96] hover:text-[#172B49] hover:bg-white/60'
                 }`}
               >
                 {link.name}
@@ -69,9 +69,9 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center gap-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 hover:bg-white border border-white/80 text-xs font-bold text-slate-800 shadow-sm transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-inset text-xs font-bold text-[#172B49] shadow-sm transition-all"
               >
-                <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-6 h-6 rounded-full bg-[#172B49] text-white flex items-center justify-center text-[10px] font-bold">
                   {displayName.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <span className="max-w-[100px] truncate">{displayName}</span>
@@ -79,7 +79,7 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={handleSignOut}
                 title="Log Out"
-                className="p-2 rounded-full text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="p-2 rounded-full text-[#718096] hover:text-red-600 hover:bg-red-50/80 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -88,13 +88,13 @@ export const Navbar: React.FC = () => {
             <>
               <Link
                 href="/login"
-                className="text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors px-2 py-1"
+                className="text-xs font-semibold text-[#496A96] hover:text-[#172B49] transition-colors px-2 py-1"
               >
                 Sign In
               </Link>
               <Link
-                href="/builder"
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-blue-500/25 hover:shadow-blue-500/40 transition-all flex items-center gap-1.5 hover:gap-2"
+                href="/login"
+                className="px-4 py-2 rounded-full bg-[#172B49] hover:bg-[#243B80] text-white text-xs font-semibold shadow-md shadow-[#172B49]/20 transition-all flex items-center gap-1.5"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-3.5 h-3.5" />

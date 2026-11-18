@@ -5,11 +5,13 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StudentDiscoveryWizard } from '@/components/student/StudentDiscoveryWizard';
 import { GraduationCap, Sparkles, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 export default function StudentModePage() {
   return (
-    <div className="min-h-screen cvgenie-ambient-bg flex flex-col justify-between">
-      <Navbar />
+    <AuthGuard>
+      <div className="misty-mountain-viewport min-h-screen flex flex-col justify-between selection:bg-blue-200">
+        <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         {/* Header Hero Banner */}
@@ -70,5 +72,6 @@ export default function StudentModePage() {
 
       <Footer />
     </div>
+    </AuthGuard>
   );
 }

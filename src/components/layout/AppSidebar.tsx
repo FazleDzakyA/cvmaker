@@ -48,7 +48,7 @@ export const AppSidebar: React.FC = () => {
   return (
     <>
       {/* 1. Desktop Floating Glass Sidebar (Left) */}
-      <aside className="hidden md:flex flex-col items-center justify-between py-6 px-3 glass-sidebar w-16 shrink-0 h-[calc(100vh-2.5rem)] fixed left-5 top-5 z-40 shadow-xl">
+      <aside className="hidden md:flex flex-col items-center justify-between py-6 px-3 glass-sidebar w-16 shrink-0 h-[calc(100vh-2.5rem)] sticky top-5 z-40 shadow-xl rounded-3xl">
         {/* Top App Icons */}
         <div className="flex flex-col items-center gap-3.5 w-full">
           {/* Brand Sparkle Logo */}

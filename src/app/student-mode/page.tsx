@@ -9,11 +9,11 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 export default function StudentModePage() {
   return (
     <AuthGuard>
-      <div className="misty-mountain-viewport min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 overflow-x-hidden selection:bg-blue-200">
+      <div className="misty-mountain-viewport min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 gap-4 lg:gap-6 overflow-x-hidden selection:bg-blue-200">
         {/* Single Unified App Sidebar */}
         <AppSidebar />
 
-        <main className="flex-1 flex flex-col md:pl-20 max-w-5xl mx-auto w-full min-w-0 pb-20 md:pb-6">
+        <main className="flex-1 min-w-0 flex flex-col max-w-5xl mx-auto w-full pb-20 md:pb-6">
           {/* Header Hero Banner */}
           <div className="text-center max-w-2xl mx-auto mb-8 pt-2">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-pill text-[#172B49] text-xs font-bold mb-3 shadow-sm">

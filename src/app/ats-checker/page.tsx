@@ -2,35 +2,139 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, CheckCircle2, AlertCircle, Sparkles, ArrowRight, RefreshCw, FileText } from 'lucide-react';
-import { getActiveCV } from '@/lib/storage';
+import { useRouter } from 'next/navigation';
+import {
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  ArrowRight,
+  RefreshCw,
+  FileText,
+  Check,
+  Folder,
+  Layers,
+  ChevronDown,
+  ExternalLink,
+  Plus,
+} from 'lucide-react';
+import { getActiveCV, saveActiveCV, getStoredCVs } from '@/lib/storage';
 import { analyzeCVWithATS } from '@/lib/atsScorer';
 import { samplePreviewCVData } from '@/data/samplePreviewCVData';
-import { ATSAnalysisReport } from '@/types/cv';
+import { ATSAnalysisReport, CVData } from '@/types/cv';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AppSidebar } from '@/components/layout/AppSidebar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ATSCheckerPage() {
+  const router = useRouter();
+  const { fetchUserCVs, user } = useAuth();
+  const [cvList, setCvList] = useState<CVData[]>([]);
+  const [selectedCV, setSelectedCV] = useState<CVData | null>(null);
   const [report, setReport] = useState<ATSAnalysisReport | null>(null);
+  const [isLoadingCVs, setIsLoadingCVs] = useState<boolean>(true);
 
+  // Load available CVs from DB and local storage
   useEffect(() => {
-    const active = getActiveCV();
-    const cvToScore = active && active.personalInfo?.fullName ? active : samplePreviewCVData;
-    const res = analyzeCVWithATS(cvToScore);
-    setReport(res);
-  }, []);
+    const loadCVs = async () => {
+      setIsLoadingCVs(true);
+      try {
+        let dbCVs: CVData[] = [];
+        if (user) {
+          dbCVs = await fetchUserCVs();
+        }
+        const localCVs = getStoredCVs();
+        const active = getActiveCV();
 
-  if (!report) return null;
+        // Combine and deduplicate CVs
+        const combinedMap = new Map<string, CVData>();
+
+        // 1. Always add benchmark sample CV as an option
+        combinedMap.set('sample-benchmark', {
+          ...samplePreviewCVData,
+          id: 'sample-benchmark',
+          title: 'CV Contoh Standar (Sample Benchmark)',
+        });
+
+        // 2. Add active CV if exists
+        if (active && active.id) {
+          combinedMap.set(active.id, active);
+        }
+
+        // 3. Add local CVs
+        localCVs.forEach((c) => {
+          if (c.id && !combinedMap.has(c.id)) {
+            combinedMap.set(c.id, c);
+          }
+        });
+
+        // 4. Add DB CVs
+        dbCVs.forEach((c) => {
+          if (c.id) {
+            combinedMap.set(c.id, c);
+          }
+        });
+
+        const list = Array.from(combinedMap.values());
+        setCvList(list);
+
+        // Pick initial selected CV: preferred active CV or first item
+        const initial =
+          (active && active.personalInfo?.fullName && combinedMap.get(active.id)) ||
+          list.find((c) => c.id !== 'sample-benchmark') ||
+          list[0];
+
+        setSelectedCV(initial);
+        setReport(analyzeCVWithATS(initial));
+      } catch (e) {
+        console.error('Error loading CVs for ATS checker:', e);
+        setSelectedCV(samplePreviewCVData);
+        setReport(analyzeCVWithATS(samplePreviewCVData));
+      } finally {
+        setIsLoadingCVs(false);
+      }
+    };
+
+    loadCVs();
+  }, [user]);
+
+  // Handle switching selected CV
+  const handleSelectCV = (cv: CVData) => {
+    setSelectedCV(cv);
+    const updatedReport = analyzeCVWithATS(cv);
+    setReport(updatedReport);
+  };
+
+  // Open the selected CV in studio
+  const handleOpenInStudio = () => {
+    if (selectedCV) {
+      if (selectedCV.id !== 'sample-benchmark') {
+        saveActiveCV(selectedCV);
+      }
+      router.push('/builder');
+    }
+  };
+
+  if (!report || !selectedCV) {
+    return (
+      <div className="misty-mountain-viewport min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-[#172B49] font-semibold">
+          <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+          <span>Memuat data audit ATS...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthGuard>
-      <div className="misty-mountain-viewport min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 overflow-x-hidden selection:bg-blue-200">
+      <div className="misty-mountain-viewport min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 gap-4 lg:gap-6 overflow-x-hidden selection:bg-blue-200">
         {/* Single Unified App Sidebar */}
         <AppSidebar />
 
-        <main className="flex-1 flex flex-col md:pl-20 max-w-4xl mx-auto w-full min-w-0 pb-20 md:pb-6">
+        <main className="flex-1 min-w-0 flex flex-col max-w-4xl mx-auto w-full pb-20 md:pb-6">
           {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-8 pt-2">
+          <div className="text-center max-w-2xl mx-auto mb-6 pt-2">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-pill text-emerald-800 text-xs font-bold mb-3 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Applicant Tracking System (ATS) Audit Engine</span>
@@ -39,12 +143,110 @@ export default function ATSCheckerPage() {
               Apakah CV Anda Siap Lolos ATS?
             </h1>
             <p className="text-xs sm:text-sm text-[#718096]">
-              Lebih dari 75% CV disaring oleh robot pemindai otomatis sebelum dibaca HRD. Algoritma kami memvalidasi format, kata kerja aktif, dan keterbacaan data Anda secara instan.
+              Pilih CV yang ingin Anda audit. Robot algoritma kami mengevaluasi hierarki, kata kerja aksi industri, dan tingkat keterbacaan secara instan.
             </p>
           </div>
 
-          {/* ATS Score Overview Card */}
-          <div className="rounded-3xl glass-card border border-white/90 p-6 sm:p-8 shadow-xl mb-8 relative overflow-hidden bg-white/85">
+          {/* 1. CV SELECTOR SECTION ("ats checker bisa pilih cv mana yang mau di check") */}
+          <div className="mb-6 rounded-3xl glass-card border border-white/90 p-5 bg-white/85 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-200/70">
+              <div>
+                <h3 className="text-xs font-bold text-[#172B49] flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-blue-600" />
+                  <span>Pilih CV yang Ingin Diaudit:</span>
+                </h3>
+                <p className="text-[11px] text-[#718096]">
+                  Klik pada kartu CV di bawah ini untuk melihat audit skor dan saran optimasi spesifik untuk CV tersebut:
+                </p>
+              </div>
+              <Link
+                href="/builder"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Buat CV Baru</span>
+              </Link>
+            </div>
+
+            {/* List of selectable CV cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {cvList.map((cv) => {
+                const isSelected = selectedCV.id === cv.id;
+                const cvScore = analyzeCVWithATS(cv).overallScore;
+
+                return (
+                  <div
+                    key={cv.id}
+                    onClick={() => handleSelectCV(cv)}
+                    className={`p-3.5 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between group ${
+                      isSelected
+                        ? 'bg-[#172B49] text-white border-[#172B49] shadow-lg shadow-[#172B49]/20 scale-[1.02]'
+                        : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200/80 hover:border-blue-400'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            isSelected
+                              ? 'bg-white/20 text-blue-200'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {cv.templateId || 'minimalist'}
+                        </span>
+                        <span
+                          className={`text-xs font-extrabold ${
+                            isSelected
+                              ? 'text-emerald-300'
+                              : cvScore >= 80
+                              ? 'text-emerald-600'
+                              : 'text-amber-600'
+                          }`}
+                        >
+                          ATS {cvScore}/100
+                        </span>
+                      </div>
+
+                      <h4
+                        className={`text-xs font-bold truncate ${
+                          isSelected ? 'text-white' : 'text-[#172B49]'
+                        }`}
+                      >
+                        {cv.title || 'Untitled CV'}
+                      </h4>
+                      <p
+                        className={`text-[11px] truncate mt-0.5 ${
+                          isSelected ? 'text-slate-300' : 'text-[#718096]'
+                        }`}
+                      >
+                        {cv.personalInfo?.fullName || 'Belum Ada Nama'} • {cv.personalInfo?.jobTitle || 'Belum Ada Posisi'}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
+                      <span className={isSelected ? 'text-slate-300' : 'text-slate-400'}>
+                        {cv.updatedAt || 'Baru'}
+                      </span>
+                      {isSelected ? (
+                        <span className="flex items-center gap-1 font-bold text-emerald-300">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          <span>Sedang Diaudit</span>
+                        </span>
+                      ) : (
+                        <span className="text-blue-600 group-hover:underline font-semibold">
+                          Audit CV Ini $\rightarrow$
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. ATS SCORE OVERVIEW CARD (For the Selected CV) */}
+          <div className="rounded-3xl glass-card border border-white/90 p-6 sm:p-8 shadow-xl mb-6 relative overflow-hidden bg-white/85">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 {/* Radial Score Gauge */}
@@ -82,61 +284,100 @@ export default function ATSCheckerPage() {
                   <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-1.5 bg-emerald-100 text-emerald-800">
                     Status: {report.statusLabel || 'Sangat Siap Lolos ATS'}
                   </div>
-                  <h2 className="text-lg font-bold text-[#172B49]">Kualitas Resume Terverifikasi</h2>
+                  <h2 className="text-lg font-bold text-[#172B49]">
+                    {selectedCV.title || 'Untitled CV'}
+                  </h2>
                   <p className="text-xs text-[#718096] max-w-sm mt-0.5">
-                    Format tata letak bersih dan tidak menggunakan tabel bersarang yang membingungkan bot parser.
+                    Kandidat: <strong>{selectedCV.personalInfo?.fullName || 'Belum diisi'}</strong> ({selectedCV.personalInfo?.jobTitle || 'Tanpa Posisi'}).
                   </p>
                 </div>
               </div>
 
-              <Link
-                href="/builder"
-                className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#172B49] hover:bg-[#243B80] text-white text-xs font-bold shadow-lg shadow-[#172B49]/20 flex items-center justify-center gap-2 transition-all shrink-0"
+              {/* Action: Open selected CV in Studio */}
+              <button
+                onClick={handleOpenInStudio}
+                className="w-full md:w-auto px-5 py-3 rounded-2xl bg-[#172B49] hover:bg-[#243B80] text-white text-xs font-bold shadow-lg shadow-[#172B49]/20 flex items-center justify-center gap-2 transition-all shrink-0 hover:scale-105"
               >
                 <FileText className="w-4 h-4" />
-                <span>Buka & Edit di Studio CV</span>
+                <span>Buka & Edit CV Ini di Studio</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
+            </div>
+
+            {/* Score Metrics Progress Bars */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200/80">
+              <div className="p-3 rounded-xl bg-slate-50/80 text-center">
+                <span className="text-[10px] font-bold text-slate-500 block mb-1">Struktur CV</span>
+                <span className="text-sm font-extrabold text-[#172B49]">{report.structureScore}/100</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/80 text-center">
+                <span className="text-[10px] font-bold text-slate-500 block mb-1">Kata Kunci (Keywords)</span>
+                <span className="text-sm font-extrabold text-[#172B49]">{report.keywordScore}/100</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/80 text-center">
+                <span className="text-[10px] font-bold text-slate-500 block mb-1">Keterbacaan (Font/Layout)</span>
+                <span className="text-sm font-extrabold text-[#172B49]">{report.readabilityScore}/100</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/80 text-center">
+                <span className="text-[10px] font-bold text-slate-500 block mb-1">Format Bersih A4</span>
+                <span className="text-sm font-extrabold text-[#172B49]">{report.formattingScore}/100</span>
+              </div>
             </div>
           </div>
 
-          {/* Breakdown Cards */}
+          {/* 3. BREAKDOWN & SUGGESTIONS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {/* Strengths */}
             <div className="p-5 rounded-3xl glass-card bg-white/75 border border-white/80 space-y-3">
               <h3 className="text-xs font-bold text-[#172B49] flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Kekuatan Resume Anda</span>
+                <span>Kekuatan CV {selectedCV.personalInfo?.fullName || ''}</span>
               </h3>
               <ul className="space-y-2 text-xs text-slate-700">
                 <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Struktur hierarki kontak dan pendidikan terbaca jelas.</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>
+                    {selectedCV.personalInfo?.email && selectedCV.personalInfo?.phone
+                      ? 'Kontak penting (Email & No. HP) lengkap dan mudah dideteksi bot.'
+                      : 'Pastikan melengkapi Email dan No. HP di formulir Studio.'}
+                  </span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Ukuran proporsi kertas standar A4 sesuai mesin cetak.</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>
+                    {selectedCV.education && selectedCV.education.length > 0
+                      ? `Memuat riwayat pendidikan (${selectedCV.education[0]?.institution}).`
+                      : 'Tambahkan data sekolah atau universitas.'}
+                  </span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Format tipografi bersih bebas elemen grafis berat.</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Menggunakan rasio margin A4 standar tanpa tabel tersembunyi.</span>
                 </li>
               </ul>
             </div>
 
+            {/* Suggestions */}
             <div className="p-5 rounded-3xl glass-card bg-white/75 border border-white/80 space-y-3">
               <h3 className="text-xs font-bold text-[#172B49] flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-blue-600" />
                 <span>Saran Optimasi Tambahan</span>
               </h3>
               <ul className="space-y-2 text-xs text-slate-700">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Sertakan tautan portofolio atau media sosial profesional.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Gunakan tombol AI di Studio untuk memperkuat poin kalimat.</span>
-                </li>
+                {report.suggestions && report.suggestions.length > 0 ? (
+                  report.suggestions.slice(0, 3).map((sug, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                      <span>
+                        <strong>{sug.title}:</strong> {sug.description}
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="flex items-center gap-2 text-slate-500">
+                    <span>CV ini telah memiliki struktur yang sangat optimal untuk bot ATS.</span>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

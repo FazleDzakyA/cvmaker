@@ -220,12 +220,12 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="misty-mountain-viewport text-[#172B49] min-h-screen p-3 sm:p-5 lg:p-6 overflow-x-hidden selection:bg-blue-200 md:pl-24">
+    <div className="misty-mountain-viewport text-[#172B49] min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 gap-4 lg:gap-6 overflow-x-hidden selection:bg-blue-200">
       {/* Unified Global Floating Glass Sidebar */}
       <AppSidebar />
 
       {/* Main Workspace Layout */}
-      <main className="max-w-[1440px] mx-auto w-full min-w-0 pb-20 md:pb-6">
+      <main className="flex-1 min-w-0 max-w-[1440px] mx-auto w-full pb-20 md:pb-6">
         {/* Top Header Section */}
         <header className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           {/* Top Left: Greeting Pill & Profile */}

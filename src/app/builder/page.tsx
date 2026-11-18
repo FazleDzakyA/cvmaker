@@ -62,6 +62,13 @@ export default function BuilderPage() {
       setCvData(fresh);
       saveActiveCV(fresh);
     }
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('openAI') === 'true') {
+        setAiCustomModalOpen(true);
+      }
+    }
   }, []);
 
   const handleResetBlank = () => {
@@ -113,10 +120,11 @@ export default function BuilderPage() {
 
   return (
     <AuthGuard>
-      <div className="misty-mountain-viewport min-h-screen flex flex-col md:pl-24 pb-20 md:pb-4 overflow-x-hidden selection:bg-blue-200">
+      <div className="misty-mountain-viewport min-h-screen flex flex-col md:flex-row p-3 sm:p-5 lg:p-6 gap-4 lg:gap-6 overflow-x-hidden selection:bg-blue-200">
         <AppSidebar />
-        {/* Top Studio Header with Liquid Glass Blur */}
-        <header className="sticky top-0 z-30 bg-white/45 backdrop-blur-2xl border-b border-white/75 shadow-sm px-4 sm:px-6 py-2.5 rounded-2xl mx-3 sm:mx-6 mt-3">
+        <div className="flex-1 min-w-0 flex flex-col pb-20 md:pb-4">
+          {/* Top Studio Header with Liquid Glass Blur */}
+          <header className="sticky top-0 z-30 bg-white/45 backdrop-blur-2xl border-b border-white/75 shadow-sm px-4 sm:px-6 py-2.5 rounded-2xl mb-4">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Left: Breadcrumbs & Brand */}
           <div className="flex items-center gap-2 text-xs font-medium text-[#496A96]">
@@ -338,7 +346,8 @@ export default function BuilderPage() {
         currentCV={cvData}
         onApplyCustomCV={handleDataChange}
       />
-    </div>
+        </div>
+      </div>
     </AuthGuard>
   );
 }

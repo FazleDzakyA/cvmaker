@@ -263,18 +263,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cv.id);
+      const resumeId = isUUID ? cv.id : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined);
+      if (resumeId && cv.id !== resumeId) {
+        cv.id = resumeId;
+        saveActiveCV(cv);
+      }
+
+      const payload: any = {
+        user_id: user.id,
+        title: cv.title || 'My Professional CV',
+        template_id: cv.templateId,
+        accent_color: cv.accentColor,
+        ats_score: 98,
+        content: cv,
+        updated_at: new Date().toISOString(),
+      };
+      if (resumeId) {
+        payload.id = resumeId;
+      }
+
       const { error } = await supabase
         .from('resumes')
-        .upsert({
-          id: cv.id.includes('-') && cv.id.length > 20 ? cv.id : undefined,
-          user_id: user.id,
-          title: cv.title || 'My Professional CV',
-          template_id: cv.templateId,
-          accent_color: cv.accentColor,
-          ats_score: 98,
-          content: cv,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(payload);
 
       if (error) {
         console.error('Supabase save error:', error);
